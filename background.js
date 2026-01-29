@@ -116,8 +116,8 @@ chrome.commands.onCommand.addListener((command) => {
       break;
     
     case 'save-current-input':
-      console.log('[Commands] Saving current input...');
-      // Notify content script to save current input
+      console.log('[Commands] Saving current selection or input...');
+      // Notify content script to save current input or selection
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) {
           console.log('[Commands] Sending saveCurrentInput to tab:', tabs[0].id);

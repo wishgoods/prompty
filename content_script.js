@@ -74,17 +74,19 @@ function initializeFloatingButton() {
     position: absolute;
     bottom: 70px;
     right: 0;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.95);
     color: white;
-    padding: 8px 12px;
+    padding: 12px 14px;
     border-radius: 6px;
-    font-size: 12px;
-    white-space: nowrap;
+    font-size: 11px;
+    white-space: normal;
+    width: 140px;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
+    line-height: 1.4;
   `;
-  tooltip.textContent = 'Prompt Keeper (Ctrl+Shift+K)';
+  tooltip.innerHTML = '<strong>Prompt Keeper</strong><br>✓ Click to open<br>✓ Ctrl+Shift+L: Save selection<br>✓ Ctrl+Shift+K: Open popup';
 
   button.addEventListener('mouseenter', () => {
     tooltip.style.opacity = '1';
@@ -948,12 +950,24 @@ function handleCaptureSelectedText(sendResponse) {
  * Handle save current input from keyboard shortcut
  */
 function handleSaveCurrentInput(sendResponse) {
-  const currentInput = extractPrompt();
-  if (currentInput) {
-    capturePrompt(currentInput);
-    sendResponse({ success: true, saved: currentInput });
+  // Try to get selected text first
+  const selectedText = window.getSelection().toString().trim();
+  
+  if (selectedText) {
+    console.log('[Save] Saving selected text, length:', selectedText.length);
+    capturePrompt(selectedText);
+    sendResponse({ success: true, saved: selectedText, type: 'selected' });
   } else {
-    sendResponse({ success: false, error: 'No input found' });
+    // Fallback to extracted prompt
+    const currentInput = extractPrompt();
+    if (currentInput) {
+      console.log('[Save] No selection, saving extracted prompt, length:', currentInput.length);
+      capturePrompt(currentInput);
+      sendResponse({ success: true, saved: currentInput, type: 'extracted' });
+    } else {
+      console.log('[Save] No text found');
+      sendResponse({ success: false, error: 'No text selected or input found' });
+    }
   }
 }
 
