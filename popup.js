@@ -103,7 +103,7 @@ if (modalHeader && modalContent) {
     // }
 
     // Resizing logic
-    if (isResizing && modalContent.style.display === 'flex') {
+    if (isResizing && promptModal.classList.contains('open')) {
       const deltaX = e.clientX - resizeStartX;
       const deltaY = e.clientY - resizeStartY;
       
@@ -385,7 +385,7 @@ function openNewPromptModal() {
   promptTags.value = '';
   promptNotes.value = '';
 
-  promptModal.style.display = 'flex';
+  promptModal.classList.add('open');
   centerModal();
   promptTitle.focus();
 }
@@ -410,7 +410,7 @@ function openEditPromptModal(promptId) {
   promptTags.value = (prompt.tags || []).join(', ');
   promptNotes.value = prompt.notes || '';
 
-  promptModal.style.display = 'flex';
+  promptModal.classList.add('open');
   centerModal();
   promptTitle.focus();
 }
@@ -419,7 +419,7 @@ function openEditPromptModal(promptId) {
  * Close modal
  */
 function closeModal() {
-  promptModal.style.display = 'none';
+  promptModal.classList.remove('open');
   currentEditingPrompt = null;
 }
 
