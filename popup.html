@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt Keeper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-top">
+        <h1 class="title">📝 Prompt Keeper</h1>
+        <button id="settingsBtn" class="header-btn" title="Settings">
+          ⚙️
+        </button>
+      </div>
+      
+      <!-- Search & Filter Bar -->
+      <div class="search-bar">
+        <input
+          type="text"
+          id="searchInput"
+          class="search-input"
+          placeholder="Search prompts..."
+          autocomplete="off"
+        >
+        <button id="clearSearchBtn" class="search-clear-btn" style="display: none;">✕</button>
+      </div>
+
+      <!-- Filter Options -->
+      <div class="filter-row">
+        <select id="sourceFilter" class="filter-select">
+          <option value="">All Sources</option>
+          <option value="ChatGPT">ChatGPT</option>
+          <option value="Google Gemini">Google Gemini</option>
+          <option value="Claude">Claude</option>
+          <option value="Perplexity AI">Perplexity AI</option>
+          <option value="Bing Chat">Bing Chat</option>
+          <option value="Unknown">Unknown</option>
+        </select>
+
+        <select id="categoryFilter" class="filter-select">
+          <option value="">All Categories</option>
+          <option value="General">General</option>
+          <option value="Writing">Writing</option>
+          <option value="Code">Code</option>
+          <option value="Analysis">Analysis</option>
+          <option value="Research">Research</option>
+          <option value="Creative">Creative</option>
+          <option value="Other">Other</option>
+        </select>
+
+        <button id="favoritesBtn" class="filter-btn" title="Show Favorites">
+          ⭐ Favorites
+        </button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="prompts">My Prompts</button>
+        <button class="tab-btn" data-tab="favorites">Favorites</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Prompts Tab -->
+      <section id="prompts" class="tab-content active">
+        <div class="toolbar">
+          <button id="newPromptBtn" class="btn btn-primary">
+            ➕ New Prompt
+          </button>
+          <button id="exportBtn" class="btn btn-secondary">
+            📥 Export
+          </button>
+          <button id="importBtn" class="btn btn-secondary">
+            📤 Import
+          </button>
+        </div>
+
+        <!-- Prompts List -->
+        <div id="promptsList" class="prompts-list">
+          <div class="empty-state">
+            <p>📭 No prompts yet</p>
+            <p class="empty-hint">Start saving prompts from ChatGPT, Gemini, Claude and more!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Favorites Tab -->
+      <section id="favorites" class="tab-content">
+        <div id="favoritesList" class="prompts-list">
+          <div class="empty-state">
+            <p>⭐ No favorites yet</p>
+            <p class="empty-hint">Star your favorite prompts to see them here</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings Tab -->
+      <section id="settings" class="tab-content">
+        <div class="settings-panel">
+          <div class="setting-group">
+            <h3>📊 Statistics</h3>
+            <p>Total Prompts: <span id="totalCount">0</span></p>
+            <p>Total Favorites: <span id="favoritesCount">0</span></p>
+          </div>
+
+          <div class="setting-group">
+            <h3>💾 Data Management</h3>
+            <button id="exportAllBtn" class="btn btn-secondary">
+              Export All Prompts
+            </button>
+            <button id="importDataBtn" class="btn btn-secondary">
+              Import Prompts
+            </button>
+            <button id="clearDataBtn" class="btn btn-danger">
+              🗑️ Clear All Data
+            </button>
+          </div>
+
+          <div class="setting-group">
+            <h3>⚙️ Settings</h3>
+            <label class="checkbox-label">
+              <input type="checkbox" id="autoCapture" checked>
+              Auto-capture prompts from AI sites
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" id="showNotifications" checked>
+              Show save notifications
+            </label>
+          </div>
+
+          <div class="setting-group">
+            <h3>ℹ️ About</h3>
+            <p>Prompt Keeper v1.0.0</p>
+            <p class="small-text">Manage and organize your AI prompts across all platforms</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Prompt Detail Modal -->
+  <div id="promptModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">New Prompt</h2>
+        <button class="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Title Input -->
+        <div class="form-group">
+          <label for="promptTitle">Title</label>
+          <input
+            type="text"
+            id="promptTitle"
+            class="form-input"
+            placeholder="Give your prompt a name..."
+          >
+        </div>
+
+        <!-- Content Textarea -->
+        <div class="form-group">
+          <label for="promptContent">Prompt Content</label>
+          <textarea
+            id="promptContent"
+            class="form-textarea"
+            placeholder="Enter your prompt here..."
+            rows="6"
+          ></textarea>
+        </div>
+
+        <!-- Output Textarea -->
+        <div class="form-group">
+          <label for="promptOutput">Output / Response</label>
+          <textarea
+            id="promptOutput"
+            class="form-textarea"
+            placeholder="Optional: Paste the AI's response..."
+            rows="6"
+          ></textarea>
+        </div>
+
+        <!-- Category -->
+        <div class="form-row">
+          <div class="form-group">
+            <label for="promptCategory">Category</label>
+            <select id="promptCategory" class="form-select">
+              <option value="General">General</option>
+              <option value="Writing">Writing</option>
+              <option value="Code">Code</option>
+              <option value="Analysis">Analysis</option>
+              <option value="Research">Research</option>
+              <option value="Creative">Creative</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="promptSource">Source</label>
+            <select id="promptSource" class="form-select">
+              <option value="ChatGPT">ChatGPT</option>
+              <option value="Google Gemini">Google Gemini</option>
+              <option value="Claude">Claude</option>
+              <option value="Perplexity AI">Perplexity AI</option>
+              <option value="Bing Chat">Bing Chat</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tags -->
+        <div class="form-group">
+          <label for="promptTags">Tags (comma-separated)</label>
+          <input
+            type="text"
+            id="promptTags"
+            class="form-input"
+            placeholder="e.g., important, follow-up, idea"
+          >
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label for="promptNotes">Notes</label>
+          <textarea
+            id="promptNotes"
+            class="form-textarea"
+            placeholder="Add personal notes about this prompt..."
+            rows="3"
+          ></textarea>
+        </div>
+
+        <!-- Version History -->
+        <div id="versionHistory" class="form-group" style="display: none;">
+          <label>Version History</label>
+          <div id="versionsList" class="versions-list"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
+        <button id="deleteBtn" class="btn btn-danger" style="display: none;">Delete</button>
+        <button id="saveBtn" class="btn btn-primary">Save Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Import File Input (hidden) -->
+  <input type="file" id="importFile" accept=".json" style="display: none;">
+
+  <!-- Scripts -->
+  <script src="popup.js"></script>
+</body>
+</html>
