@@ -116,42 +116,6 @@ chrome.commands.onCommand.addListener((command) => {
       }
       break;
     
-    case 'save-current-input':
-      console.log('[Commands] Saving current selection or input...');
-      // Notify content script to save current input or selection
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (!tabs[0]) {
-          console.warn('[Commands] No active tab found');
-          return;
-        }
-
-        const tab = tabs[0];
-        
-        // Only send message if tab URL is accessible (not chrome://, etc.)
-        if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('about:')) {
-          console.warn('[Commands] Cannot save from system tab:', tab.url);
-          return;
-        }
-
-        console.log('[Commands] Sending saveCurrentInput to tab:', tab.id, 'URL:', tab.url);
-        
-        try {
-          chrome.tabs.sendMessage(tab.id, { action: 'saveCurrentInput' }, (response) => {
-            if (chrome.runtime.lastError) {
-              // Expected error if content script not loaded on this tab
-              console.warn('[Commands] Content script not available:', chrome.runtime.lastError.message);
-            } else if (response) {
-              console.log('[Commands] Response:', response.type, '-', response.saved?.substring(0, 50));
-            } else {
-              console.log('[Commands] No response from content script');
-            }
-          });
-        } catch (error) {
-          console.error('[Commands] Exception:', error.message);
-        }
-      });
-      break;
-    
     default:
       console.warn('[Commands] Unknown command:', command);
   }

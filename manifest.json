@@ -6,22 +6,10 @@
   
   "permissions": [
     "storage",
-    "scripting",
-    "activeTab",
     "commands"
   ],
   
-  "host_permissions": [
-    "https://chat.openai.com/*",
-    "https://chatgpt.com/*",
-    "https://gemini.google.com/*",
-    "https://claude.ai/*",
-    "https://www.perplexity.ai/*",
-    "https://www.bing.com/search*",
-    "https://huggingface.co/*",
-    "https://api.anthropic.com/*",
-    "<all_urls>"
-  ],
+  "host_permissions": [],
   
   "background": {
     "service_worker": "background.js"
@@ -37,22 +25,7 @@
     }
   },
   
-  "content_scripts": [
-    {
-      "matches": [
-        "https://chat.openai.com/*",
-        "https://chatgpt.com/*",
-        "https://gemini.google.com/*",
-        "https://claude.ai/*",
-        "https://www.perplexity.ai/*",
-        "https://www.bing.com/*",
-        "https://huggingface.co/*",
-        "<all_urls>"
-      ],
-      "js": ["content_script.js"],
-      "run_at": "document_start"
-    }
-  ],
+  "content_scripts": [],
   
   "web_accessible_resources": [
     {
@@ -74,13 +47,6 @@
         "mac": "Command+Shift+K"
       },
       "description": "Open Prompt Keeper popup"
-    },
-    "save-current-input": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+L",
-        "mac": "Command+Shift+L"
-      },
-      "description": "Save current input as prompt"
     }
   }
 }
