@@ -12,7 +12,7 @@
     <header class="header">
       <div class="header-top">
         <h1 class="title">📝 Prompt Keeper</h1>
-        <button id="settingsBtn" class="header-btn" title="Settings">
+        <button id="settingsBtn" class="header-btn" title="Go to Settings">
           ⚙️
         </button>
       </div>
@@ -23,7 +23,7 @@
           type="text"
           id="searchInput"
           class="search-input"
-          placeholder="Search prompts..."
+          placeholder="🔍 Search prompts by title or content..."
           autocomplete="off"
         >
         <button id="clearSearchBtn" class="search-clear-btn" style="display: none;">✕</button>
@@ -32,7 +32,7 @@
       <!-- Filter Options -->
       <div class="filter-row">
         <select id="sourceFilter" class="filter-select">
-          <option value="">All Sources</option>
+          <option value="">📌 All Sources</option>
           <option value="ChatGPT">ChatGPT</option>
           <option value="Google Gemini">Google Gemini</option>
           <option value="Claude">Claude</option>
@@ -42,7 +42,7 @@
         </select>
 
         <select id="categoryFilter" class="filter-select">
-          <option value="">All Categories</option>
+          <option value="">🏷️ All Categories</option>
           <option value="General">General</option>
           <option value="Writing">Writing</option>
           <option value="Code">Code</option>
@@ -59,9 +59,9 @@
 
       <!-- Tab Navigation -->
       <div class="tabs">
-        <button class="tab-btn active" data-tab="prompts">My Prompts</button>
-        <button class="tab-btn" data-tab="favorites">Favorites</button>
-        <button class="tab-btn" data-tab="settings">Settings</button>
+        <button class="tab-btn active" data-tab="prompts">📋 My Prompts</button>
+        <button class="tab-btn" data-tab="favorites">⭐ Favorites</button>
+        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
       </div>
     </header>
 
@@ -71,10 +71,10 @@
       <section id="prompts" class="tab-content active">
         <div class="toolbar">
           <button id="newPromptBtn" class="btn btn-primary">
-            ➕ New Prompt
+            ✨ Create Prompt
           </button>
           <button id="exportBtn" class="btn btn-secondary">
-            📥 Export
+            📥 Export All
           </button>
           <button id="importBtn" class="btn btn-secondary">
             📤 Import
@@ -84,8 +84,9 @@
         <!-- Prompts List -->
         <div id="promptsList" class="prompts-list">
           <div class="empty-state">
-            <p>📭 No prompts yet</p>
-            <p class="empty-hint">Start saving prompts from ChatGPT, Gemini, Claude and more!</p>
+            <p>📭</p>
+            <p>No prompts saved yet</p>
+            <p class="empty-hint">Start using Prompt Keeper with ChatGPT, Gemini, Claude and more!</p>
           </div>
         </div>
       </section>

@@ -143,7 +143,7 @@ async function loadAllPrompts() {
 }
 
 /**
- * Render prompts to the UI
+ * Render prompts to the UI with animations
  */
 function renderPrompts(prompts) {
   const container = currentTab === 'prompts' ? promptsList : favoritesList;
@@ -158,18 +158,18 @@ function renderPrompts(prompts) {
     return;
   }
 
-  container.innerHTML = prompts.map(prompt => `
-    <div class="prompt-card" data-id="${prompt.id}">
+  const promptsHTML = prompts.map((prompt, index) => `
+    <div class="prompt-card" data-id="${prompt.id}" style="animation-delay: ${index * 0.05}s">
       <div class="prompt-header">
         <h3 class="prompt-title">${escapeHtml(prompt.title)}</h3>
         <div class="prompt-actions">
-          <button class="icon-btn favorite-btn" title="Add to favorites" data-id="${prompt.id}">
+          <button class="icon-btn favorite-btn" title="Add to favorites" data-id="${prompt.id}" data-tooltip="${prompt.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
             ${prompt.isFavorite ? '⭐' : '☆'}
           </button>
-          <button class="icon-btn edit-btn" title="Edit" data-id="${prompt.id}">
+          <button class="icon-btn edit-btn" title="Edit" data-id="${prompt.id}" data-tooltip="Edit prompt">
             ✏️
           </button>
-          <button class="icon-btn copy-btn" title="Copy prompt" data-id="${prompt.id}">
+          <button class="icon-btn copy-btn" title="Copy prompt" data-id="${prompt.id}" data-tooltip="Copy to clipboard">
             📋
           </button>
         </div>
@@ -178,18 +178,20 @@ function renderPrompts(prompts) {
       <p class="prompt-preview">${escapeHtml(truncateText(prompt.content, 150))}</p>
 
       <div class="prompt-meta">
-        <span class="badge badge-source">${prompt.source}</span>
-        <span class="badge badge-category">${prompt.category}</span>
-        <span class="badge badge-date">${formatDate(prompt.timestamp)}</span>
+        <span class="badge badge-source">📌 ${prompt.source}</span>
+        <span class="badge badge-category">🏷️ ${prompt.category}</span>
+        <span class="badge badge-date">🕐 ${formatDate(prompt.timestamp)}</span>
       </div>
 
       ${prompt.tags && prompt.tags.length > 0 ? `
         <div class="prompt-tags">
-          ${prompt.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+          ${prompt.tags.map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
         </div>
       ` : ''}
     </div>
   `).join('');
+
+  container.innerHTML = promptsHTML;
 
   // Attach event listeners to buttons
   attachPromptCardListeners();
@@ -402,7 +404,7 @@ async function copyPromptToClipboard(promptId) {
 }
 
 /**
- * Show notification toast
+ * Show notification toast with better styling
  */
 function showNotification(message) {
   const notification = document.createElement('div');
@@ -410,21 +412,25 @@ function showNotification(message) {
   notification.textContent = message;
   notification.style.cssText = `
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
-    background: #4CAF50;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
     color: white;
-    padding: 12px 20px;
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 14px 24px;
+    border-radius: 10px;
+    box-shadow: 0 10px 32px rgba(15, 23, 42, 0.15);
     font-size: 13px;
+    font-weight: 600;
     z-index: 10000;
-    animation: slideIn 0.3s ease-out;
+    animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: inherit;
+    letter-spacing: 0.3px;
   `;
   document.body.appendChild(notification);
 
   setTimeout(() => {
-    notification.remove();
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
   }, 2500);
 }
 
