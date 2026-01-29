@@ -54,8 +54,16 @@ let isDragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
+// Resizing functionality for modal
+let isResizing = false;
+let resizeStartX = 0;
+let resizeStartY = 0;
+let resizeStartWidth = 0;
+let resizeStartHeight = 0;
+
 const modalContent = document.querySelector('.modal-content');
 const modalHeader = document.querySelector('.modal-header');
+const modalResizeHandle = document.querySelector('.modal-resize-handle');
 
 // Initialize modal position to center
 function centerModal() {
@@ -93,6 +101,24 @@ if (modalHeader && modalContent) {
       modalContent.style.left = constrainedX + 'px';
       modalContent.style.top = constrainedY + 'px';
     }
+
+    // Resizing logic
+    if (isResizing && modalContent.style.display === 'flex') {
+      const deltaX = e.clientX - resizeStartX;
+      const deltaY = e.clientY - resizeStartY;
+      
+      const newWidth = Math.max(400, resizeStartWidth + deltaX);
+      const newHeight = Math.max(300, resizeStartHeight + deltaY);
+      
+      // Constrain to viewport
+      const maxWidth = window.innerWidth - modalContent.offsetLeft;
+      const maxHeight = window.innerHeight - modalContent.offsetTop;
+      
+      modalContent.style.width = Math.min(newWidth, maxWidth) + 'px';
+      modalContent.style.height = Math.min(newHeight, maxHeight) + 'px';
+      modalContent.style.maxWidth = 'none';
+      modalContent.style.maxHeight = 'none';
+    }
   });
 
   document.addEventListener('mouseup', () => {
@@ -100,7 +126,23 @@ if (modalHeader && modalContent) {
       isDragging = false;
       console.log('[Dragging] Stopped dragging modal');
     }
+    if (isResizing) {
+      isResizing = false;
+      console.log('[Resizing] Stopped resizing modal');
+    }
   });
+
+  // Resize handle listeners
+  if (modalResizeHandle) {
+    modalResizeHandle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizeStartX = e.clientX;
+      resizeStartY = e.clientY;
+      resizeStartWidth = modalContent.offsetWidth;
+      resizeStartHeight = modalContent.offsetHeight;
+      console.log('[Resizing] Started resizing modal');
+    });
+  }
 }
 
 // Tab Navigation
