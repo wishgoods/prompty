@@ -71,14 +71,20 @@
       <section id="prompts" class="tab-content active">
         <div class="toolbar">
           <button id="newPromptBtn" class="btn btn-primary">
-            ✨ Create Prompt
+            ✨ New Prompt
           </button>
           <button id="exportBtn" class="btn btn-secondary">
-            📥 Export All
+            📥 Export
           </button>
           <button id="importBtn" class="btn btn-secondary">
             📤 Import
           </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats" style="display: flex; gap: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
+          <span>📊 Total: <strong id="quickTotal">0</strong></span>
+          <span>⭐ Favorites: <strong id="quickFavorites">0</strong></span>
         </div>
 
         <!-- Prompts List -->

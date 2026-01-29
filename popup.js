@@ -78,10 +78,21 @@ saveBtn.addEventListener('click', savePrompt);
 deleteBtn.addEventListener('click', deletePrompt);
 
 // Search & Filter
-searchInput.addEventListener('input', debounce(filterAndSearch, 300));
+searchInput.addEventListener('input', (e) => {
+  debounce(filterAndSearch, 300)();
+  updateSearchClearButton();
+});
+
 sourceFilter.addEventListener('change', debounce(filterAndSearch, 300));
 categoryFilter.addEventListener('change', debounce(filterAndSearch, 300));
 favoritesBtn.addEventListener('click', filterByFavorites);
+
+// Clear search button
+document.getElementById('clearSearchBtn').addEventListener('click', () => {
+  searchInput.value = '';
+  filterAndSearch();
+  updateSearchClearButton();
+});
 
 // Close modal when clicking outside
 promptModal.addEventListener('click', (e) => {
@@ -592,6 +603,24 @@ function switchTab(tabName) {
 function updateStatistics() {
   totalCountEl.textContent = currentPrompts.length;
   favoritesCountEl.textContent = currentPrompts.filter(p => p.isFavorite).length;
+  
+  // Update quick stats in prompts tab
+  const quickTotal = document.getElementById('quickTotal');
+  const quickFavorites = document.getElementById('quickFavorites');
+  if (quickTotal) quickTotal.textContent = currentPrompts.length;
+  if (quickFavorites) quickFavorites.textContent = currentPrompts.filter(p => p.isFavorite).length;
+}
+
+/**
+ * Update search clear button visibility
+ */
+function updateSearchClearButton() {
+  const clearBtn = document.getElementById('clearSearchBtn');
+  if (searchInput.value.trim()) {
+    clearBtn.style.display = 'block';
+  } else {
+    clearBtn.style.display = 'none';
+  }
 }
 
 // ==================== Utility Functions ====================

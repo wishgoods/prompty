@@ -1,15 +1,230 @@
 /**
  * Content Script
- * Injected into every page to detect and capture prompts
+ * Injected into every page to detect and capture prompts in real-time
  */
-
-// ==================== Initialization ====================
 
 console.log('Prompt Keeper content script loaded');
 
 let aiSource = detectAISource();
+let trackedTextareas = new Map(); // Track all monitored textareas
 
-// ==================== Prompt Detection & Capture ====================
+// ==================== Real-time Auto-Save ====================
+
+/**
+ * Monitor all textareas and input fields for auto-save
+ */
+function initializeAutoSave() {
+  // Monitor existing textareas
+  document.querySelectorAll('textarea').forEach(textarea => {
+    attachAutoSaveListener(textarea);
+  });
+
+  // Monitor newly added textareas via mutation observer
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.addedNodes.length > 0) {
+        mutation.addedNodes.forEach((node) => {
+          if (node.tagName === 'TEXTAREA') {
+            attachAutoSaveListener(node);
+          } else if (node.querySelectorAll) {
+            node.querySelectorAll('textarea').forEach(textarea => {
+              if (!trackedTextareas.has(textarea)) {
+                attachAutoSaveListener(textarea);
+              }
+            });
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+}
+
+/**
+ * Attach auto-save listener to a textarea
+ */
+function attachAutoSaveListener(textarea) {
+  if (trackedTextareas.has(textarea)) return;
+  
+  trackedTextareas.set(textarea, {
+    lastValue: textarea.value,
+    saveTimeout: null
+  });
+
+  // Detect if this is a prompt input field
+  const isPromptField = isPromptInputField(textarea);
+  
+  if (!isPromptField) return; // Only monitor prompt fields
+
+  // Add visual indicator
+  textarea.style.borderColor = '#6366F1';
+  textarea.title = 'Auto-saving to Prompt Keeper...';
+
+  // Listen for input
+  textarea.addEventListener('input', (e) => {
+    const tracked = trackedTextareas.get(textarea);
+    if (!tracked) return;
+
+    // Clear previous timeout
+    if (tracked.saveTimeout) {
+      clearTimeout(tracked.saveTimeout);
+    }
+
+    // Debounce: save after 2 seconds of inactivity
+    tracked.saveTimeout = setTimeout(() => {
+      const currentValue = textarea.value.trim();
+      
+      if (currentValue && currentValue !== tracked.lastValue) {
+        savePromptInRealtime(currentValue, textarea);
+        tracked.lastValue = currentValue;
+      }
+    }, 2000);
+  });
+
+  // Save on blur
+  textarea.addEventListener('blur', () => {
+    const tracked = trackedTextareas.get(textarea);
+    if (!tracked) return;
+
+    if (tracked.saveTimeout) {
+      clearTimeout(tracked.saveTimeout);
+    }
+
+    const currentValue = textarea.value.trim();
+    if (currentValue && currentValue !== tracked.lastValue) {
+      savePromptInRealtime(currentValue, textarea);
+      tracked.lastValue = currentValue;
+    }
+  });
+}
+
+/**
+ * Detect if a textarea is a prompt input field
+ */
+function isPromptInputField(textarea) {
+  // Check various attributes that indicate a prompt field
+  const classNames = textarea.className.toLowerCase();
+  const id = textarea.id.toLowerCase();
+  const placeholder = textarea.placeholder.toLowerCase();
+  const ariaLabel = (textarea.getAttribute('aria-label') || '').toLowerCase();
+
+  const promptIndicators = [
+    'prompt', 'message', 'chat', 'input', 'compose',
+    'editor', 'content', 'text', 'query', 'search'
+  ];
+
+  const hasPromptIndicator = 
+    promptIndicators.some(word => classNames.includes(word)) ||
+    promptIndicators.some(word => id.includes(word)) ||
+    promptIndicators.some(word => placeholder.includes(word)) ||
+    promptIndicators.some(word => ariaLabel.includes(word));
+
+  // Check if it's visible and reasonable size
+  const isVisible = textarea.offsetHeight > 0 && textarea.offsetWidth > 0;
+  const isReasonableSize = textarea.offsetHeight >= 50; // At least 50px height
+
+  return hasPromptIndicator && isVisible && isReasonableSize;
+}
+
+/**
+ * Save prompt in real-time with visual feedback
+ */
+function savePromptInRealtime(promptText, sourceElement) {
+  if (!promptText || promptText.length < 10) return; // Only save prompts > 10 chars
+
+  const promptData = {
+    content: promptText,
+    source: detectAISource(),
+    timestamp: Date.now(),
+    url: window.location.href,
+    title: generatePromptTitle(promptText)
+  };
+
+  // Send to background script
+  chrome.runtime.sendMessage({
+    action: 'capturePrompt',
+    prompt: promptData.content,
+    source: promptData.source,
+    url: promptData.url
+  }, (response) => {
+    if (response && response.success) {
+      // Visual feedback
+      addSaveIndicator(sourceElement, 'Auto-saved! ✓');
+    }
+  });
+}
+
+/**
+ * Generate a title from prompt text
+ */
+function generatePromptTitle(text) {
+  const words = text.split(' ').slice(0, 6).join(' ');
+  return words.length > 50 ? words.substring(0, 50) + '...' : words;
+}
+
+/**
+ * Add visual save indicator
+ */
+function addSaveIndicator(element, message = 'Saved! ✓') {
+  // Remove existing indicator
+  const existing = element.parentElement.querySelector('.prompt-keeper-save-indicator');
+  if (existing) existing.remove();
+
+  const indicator = document.createElement('div');
+  indicator.className = 'prompt-keeper-save-indicator';
+  indicator.textContent = message;
+  indicator.style.cssText = `
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    animation: slideInRight 0.3s ease;
+    z-index: 10000;
+    pointer-events: none;
+  `;
+
+  // Add animation keyframes if not exists
+  if (!document.querySelector('style[data-prompt-keeper]')) {
+    const style = document.createElement('style');
+    style.setAttribute('data-prompt-keeper', 'true');
+    style.textContent = `
+      @keyframes slideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const wrapper = element.parentElement;
+  if (wrapper.style.position === '' || wrapper.style.position === 'static') {
+    wrapper.style.position = 'relative';
+  }
+
+  wrapper.appendChild(indicator);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    indicator.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => indicator.remove(), 300);
+  }, 3000);
+}
 
 /**
  * Detect the AI source
@@ -283,4 +498,8 @@ function handleCaptureSelectedText(sendResponse) {
 // Start monitoring for prompt submissions
 monitorPromptSubmission();
 
+// Start real-time auto-save monitoring
+initializeAutoSave();
+
 console.log('Prompt Keeper is monitoring:', aiSource);
+
