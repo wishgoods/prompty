@@ -134,49 +134,65 @@ function initializeAutoSave() {
 
     console.log('[Auto-Save] Document.body is ready, starting monitoring');
     
-    // Monitor existing textareas
+    // 1. Monitor existing textareas
     const initialTextareas = document.querySelectorAll('textarea');
     console.log('[Auto-Save] Found', initialTextareas.length, 'textareas on page load');
-    
     initialTextareas.forEach(textarea => {
       attachAutoSaveListener(textarea);
     });
 
-    // Also monitor contenteditable divs (ChatGPT uses these)
+    // 2. Monitor contenteditable divs (ChatGPT uses these)
     const editableDivs = document.querySelectorAll('[contenteditable="true"]');
     console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
     editableDivs.forEach(div => {
       attachAutoSaveListenerToContentEditable(div);
     });
     
-    // For ChatGPT specifically - monitor any large contenteditable divs (fallback)
-    if (window.location.href.includes('chatgpt.com') || window.location.href.includes('chat.openai.com')) {
-      console.log('[Auto-Save] ChatGPT detected - enabling aggressive input monitoring');
-      const allDivs = document.querySelectorAll('div[role="textbox"], div[contenteditable], textarea[data-id]');
-      allDivs.forEach(el => {
+    // 3. Aggressive search for ANY input-like elements
+    const allDivs = document.querySelectorAll(
+      'div[role="textbox"], ' +
+      '[contenteditable], ' +
+      'textarea, ' +
+      'input[type="text"], ' +
+      '[data-testid*="chat"], ' +
+      '[data-testid*="input"], ' +
+      '[data-testid*="prompt"], ' +
+      '.p-3.pl-4 > textarea'  // ChatGPT specific
+    );
+    
+    console.log('[Auto-Save] Aggressive search found', allDivs.length, 'potential input elements');
+    
+    allDivs.forEach(el => {
+      if (!trackedTextareas.has(el)) {
         if (el.contentEditable === 'true') {
-          console.log('[Auto-Save] Found ChatGPT input field:', { role: el.getAttribute('role'), class: el.className });
-          if (!trackedTextareas.has(el)) {
-            attachAutoSaveListenerToContentEditable(el);
-          }
-        } else if (el.tagName === 'TEXTAREA') {
-          if (!trackedTextareas.has(el)) {
-            attachAutoSaveListener(el);
-          }
+          console.log('[Auto-Save] Found contenteditable:', { 
+            tag: el.tagName, 
+            role: el.getAttribute('role'),
+            class: el.className.substring(0, 50) 
+          });
+          attachAutoSaveListenerToContentEditable(el);
+        } else if (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT') {
+          console.log('[Auto-Save] Found textarea/input:', { 
+            tag: el.tagName,
+            type: el.type,
+            id: el.id,
+            class: el.className.substring(0, 50)
+          });
+          attachAutoSaveListener(el);
         }
-      });
-    }
+      }
+    });
 
-    // Monitor newly added elements via mutation observer
+    // 4. Monitor newly added elements via mutation observer
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.addedNodes.length > 0) {
           mutation.addedNodes.forEach((node) => {
             // Check for new textareas
-            if (node.tagName === 'TEXTAREA') {
+            if (node.tagName === 'TEXTAREA' && !trackedTextareas.has(node)) {
               console.log('[Auto-Save] New textarea detected:', {
                 id: node.id,
-                class: node.className,
+                class: node.className.substring(0, 50),
                 placeholder: node.placeholder
               });
               attachAutoSaveListener(node);
@@ -622,19 +638,38 @@ function extractPrompt() {
 }
 
 function extractFromChatGPT() {
-  // Try to find the message input area
-  const textarea = document.querySelector('textarea[placeholder*="message"]');
+  console.log('[Extract] Searching for ChatGPT input...');
+  
+  // Try 1: Find by placeholder (most common)
+  let textarea = document.querySelector('textarea[placeholder*="message"]');
   if (textarea && textarea.value) {
+    console.log('[Extract] Found textarea with placeholder, value length:', textarea.value.length);
     return textarea.value;
   }
 
-  // Look for sent messages
+  // Try 2: Find by any textarea in the main chat area
+  textarea = document.querySelector('textarea');
+  if (textarea && textarea.value) {
+    console.log('[Extract] Found textarea without specific selector, value length:', textarea.value.length);
+    return textarea.value;
+  }
+
+  // Try 3: Find contenteditable div (ChatGPT uses this)
+  const editableDiv = document.querySelector('[contenteditable="true"][role="textbox"]');
+  if (editableDiv && editableDiv.innerText) {
+    console.log('[Extract] Found contenteditable div, text length:', editableDiv.innerText.length);
+    return editableDiv.innerText;
+  }
+
+  // Try 4: Look for sent messages
   const messages = document.querySelectorAll('[data-message-id], [role="user"]');
   if (messages.length > 0) {
     const lastUserMessage = messages[messages.length - 1];
+    console.log('[Extract] Found last user message, text length:', lastUserMessage.innerText?.length || 0);
     return lastUserMessage.innerText || '';
   }
 
+  console.log('[Extract] No ChatGPT input found');
   return '';
 }
 
@@ -732,7 +767,10 @@ function monitorPromptSubmission() {
  * Capture prompt and send to background script
  */
 function capturePrompt(promptText) {
-  if (!promptText || !promptText.trim()) return;
+  if (!promptText || !promptText.trim()) {
+    console.log('[Capture] Empty prompt, skipping');
+    return;
+  }
 
   const promptData = {
     content: promptText,
@@ -741,6 +779,12 @@ function capturePrompt(promptText) {
     url: window.location.href
   };
 
+  console.log('[Capture] Capturing prompt:', {
+    length: promptData.content.length,
+    source: promptData.source,
+    url: promptData.url
+  });
+
   // Send message to background script
   chrome.runtime.sendMessage({
     action: 'capturePrompt',
@@ -748,9 +792,13 @@ function capturePrompt(promptText) {
     source: promptData.source,
     url: promptData.url
   }, (response) => {
-    if (response && response.success) {
-      console.log('Prompt saved:', response.promptId);
+    if (chrome.runtime.lastError) {
+      console.error('[Capture] Error:', chrome.runtime.lastError);
+    } else if (response && response.success) {
+      console.log('[Capture] Prompt saved:', response.promptId);
       showSaveNotification('Prompt saved to Prompt Keeper! ✓');
+    } else {
+      console.log('[Capture] Response:', response);
     }
   });
 }
