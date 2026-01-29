@@ -562,19 +562,29 @@ function truncateText(text, length = 50) {
 /**
  * Create context menu for right-click prompt capture
  */
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'savePrompt',
-    title: 'Save to Prompt Keeper',
-    contexts: ['editable']
+if (chrome.runtime && chrome.runtime.onInstalled) {
+  chrome.runtime.onInstalled.addListener(() => {
+    try {
+      if (chrome.contextMenus) {
+        chrome.contextMenus.create({
+          id: 'savePrompt',
+          title: 'Save to Prompt Keeper',
+          contexts: ['editable']
+        });
+      }
+    } catch (error) {
+      console.log('Context menus not available:', error);
+    }
   });
-});
+}
 
 /**
  * Handle context menu clicks
  */
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === 'savePrompt') {
-    chrome.tabs.sendMessage(tab.id, { action: 'captureSelectedText' });
-  }
-});
+if (chrome.contextMenus && chrome.contextMenus.onClicked) {
+  chrome.contextMenus.onClicked.addListener((info, tab) => {
+    if (info.menuItemId === 'savePrompt') {
+      chrome.tabs.sendMessage(tab.id, { action: 'captureSelectedText' });
+    }
+  });
+}
