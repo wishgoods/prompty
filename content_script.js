@@ -84,7 +84,7 @@ function initializeFloatingButton() {
     pointer-events: none;
     transition: opacity 0.2s ease;
   `;
-  tooltip.textContent = 'Prompt Keeper (Ctrl+Shift+P)';
+  tooltip.textContent = 'Prompt Keeper (Ctrl+Shift+K)';
 
   button.addEventListener('mouseenter', () => {
     tooltip.style.opacity = '1';
