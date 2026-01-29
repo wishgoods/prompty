@@ -1,8 +1,8 @@
 /* ==================== Global Styles ==================== */
 
 html {
-  width: 100vw;
-  height: 100vh;
+  width: 1920px;
+  height: 1080px;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -40,8 +40,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
   background: var(--gradient-primary);
   color: var(--text-primary);
-  width: 100vw;
-  height: 100vh;
+  width: 1920px;
+  height: 1080px;
   overflow: hidden;
   line-height: 1.6;
   margin: 0;
