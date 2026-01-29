@@ -20,7 +20,7 @@ initializeStorage();
  * Listen for messages from content scripts and popup
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Message received:', request.action);
+  console.log('[Background] Message received:', request.action, 'from', sender.url);
 
   switch (request.action) {
     case 'capturePrompt':
@@ -102,24 +102,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * Listen for keyboard shortcuts
  */
 chrome.commands.onCommand.addListener((command) => {
-  console.log('Command received:', command);
+  console.log('[Commands] Command received:', command);
   
   switch (command) {
     case 'open-popup':
-      chrome.action.openPopup();
+      console.log('[Commands] Opening popup...');
+      // Try to open popup
+      try {
+        chrome.action.openPopup();
+      } catch (error) {
+        console.error('[Commands] Error opening popup:', error);
+      }
       break;
     
     case 'save-current-input':
+      console.log('[Commands] Saving current input...');
       // Notify content script to save current input
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0]) {
-          chrome.tabs.sendMessage(tabs[0].id, { action: 'saveCurrentInput' });
+          console.log('[Commands] Sending saveCurrentInput to tab:', tabs[0].id);
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'saveCurrentInput' }, (response) => {
+            if (chrome.runtime.lastError) {
+              console.error('[Commands] Error:', chrome.runtime.lastError);
+            } else {
+              console.log('[Commands] Response:', response);
+            }
+          });
         }
       });
       break;
     
     default:
-      console.warn('Unknown command:', command);
+      console.warn('[Commands] Unknown command:', command);
   }
 });
 
@@ -130,10 +144,11 @@ chrome.commands.onCommand.addListener((command) => {
  */
 async function handleOpenPopup(sendResponse) {
   try {
+    console.log('[Handler] Opening popup from message...');
     chrome.action.openPopup();
     sendResponse({ success: true });
   } catch (error) {
-    console.error('Error opening popup:', error);
+    console.error('[Handler] Error opening popup:', error);
     sendResponse({ error: error.message });
   }
 }

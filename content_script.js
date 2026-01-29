@@ -5,7 +5,7 @@
 
 console.log('Prompt Keeper content script loaded');
 
-let aiSource = detectAISource();
+let aiSource = null; // Will be initialized later
 let trackedTextareas = new Map(); // Track all monitored textareas
 
 // ==================== Floating Button ====================
@@ -14,6 +14,12 @@ let trackedTextareas = new Map(); // Track all monitored textareas
  * Create and inject floating button
  */
 function initializeFloatingButton() {
+  // Don't initialize if already exists
+  if (document.getElementById('prompt-keeper-floating-container')) {
+    console.log('[Floating Button] Already initialized');
+    return;
+  }
+
   // Create container
   const container = document.createElement('div');
   container.id = 'prompt-keeper-floating-container';
@@ -56,7 +62,10 @@ function initializeFloatingButton() {
   });
 
   button.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'openPopup' });
+    console.log('[Floating Button] Clicked, sending message to background');
+    chrome.runtime.sendMessage({ action: 'openPopup' }, (response) => {
+      console.log('[Floating Button] Response:', response);
+    });
   });
 
   // Create tooltip
@@ -93,11 +102,19 @@ function initializeFloatingButton() {
 }
 
 // Initialize on page load
-if (document.body) {
-  initializeFloatingButton();
-} else {
-  document.addEventListener('DOMContentLoaded', initializeFloatingButton);
+function initializeFloatingButtonIfReady() {
+  if (document.body && document.documentElement) {
+    initializeFloatingButton();
+  } else {
+    setTimeout(initializeFloatingButtonIfReady, 100);
+  }
 }
+
+// Start initialization immediately
+initializeFloatingButtonIfReady();
+
+// Also try on DOMContentLoaded as backup
+document.addEventListener('DOMContentLoaded', initializeFloatingButton);
 
 // ==================== Real-time Auto-Save ====================
 
@@ -898,6 +915,8 @@ function handleSaveCurrentInput(sendResponse) {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     console.log('[Content Script] DOM loaded, initializing...');
+    // Initialize AI source detection
+    aiSource = detectAISource();
     // Start monitoring for prompt submissions
     monitorPromptSubmission();
     // Start real-time auto-save monitoring
@@ -907,6 +926,8 @@ if (document.readyState === 'loading') {
 } else {
   // DOM is already loaded
   console.log('[Content Script] DOM already loaded, initializing...');
+  // Initialize AI source detection
+  aiSource = detectAISource();
   // Start monitoring for prompt submissions
   monitorPromptSubmission();
   // Start real-time auto-save monitoring
