@@ -110,8 +110,9 @@ chrome.commands.onCommand.addListener((command) => {
       // Try to open popup
       try {
         chrome.action.openPopup();
+        console.log('[Commands] Popup opened successfully');
       } catch (error) {
-        console.error('[Commands] Error opening popup:', error);
+        console.error('[Commands] Error opening popup:', error.message || error);
       }
       break;
     
@@ -123,11 +124,15 @@ chrome.commands.onCommand.addListener((command) => {
           console.log('[Commands] Sending saveCurrentInput to tab:', tabs[0].id);
           chrome.tabs.sendMessage(tabs[0].id, { action: 'saveCurrentInput' }, (response) => {
             if (chrome.runtime.lastError) {
-              console.error('[Commands] Error:', chrome.runtime.lastError);
+              console.error('[Commands] Error:', chrome.runtime.lastError.message);
+            } else if (response) {
+              console.log('[Commands] Response:', response.type, '-', response.saved?.substring(0, 50));
             } else {
-              console.log('[Commands] Response:', response);
+              console.log('[Commands] No response from content script');
             }
           });
+        } else {
+          console.warn('[Commands] No active tab found');
         }
       });
       break;
