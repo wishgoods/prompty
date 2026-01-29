@@ -74,56 +74,61 @@ function centerModal() {
 }
 
 if (modalHeader && modalContent) {
-  modalHeader.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    const rect = modalContent.getBoundingClientRect();
-    dragOffsetX = e.clientX - rect.left;
-    dragOffsetY = e.clientY - rect.top;
-    console.log('[Dragging] Started dragging modal');
-  });
+  // Remove drag functionality - focus only on resize
+  // modalHeader.addEventListener('mousedown', (e) => {
+  //   isDragging = true;
+  //   const rect = modalContent.getBoundingClientRect();
+  //   dragOffsetX = e.clientX - rect.left;
+  //   dragOffsetY = e.clientY - rect.top;
+  //   console.log('[Dragging] Started dragging modal');
+  // });
 
   document.addEventListener('mousemove', (e) => {
-    if (isDragging && modalContent.style.display === 'flex') {
-      const newX = e.clientX - dragOffsetX;
-      const newY = e.clientY - dragOffsetY;
-      
-      // Boundary checks
-      const maxX = window.innerWidth - modalContent.offsetWidth;
-      const maxY = window.innerHeight - modalContent.offsetHeight;
-      
-      const constrainedX = Math.max(0, Math.min(newX, maxX));
-      const constrainedY = Math.max(0, Math.min(newY, maxY));
-      
-      // Clear transform and set absolute position
-      modalContent.style.transform = 'none';
-      modalContent.style.left = constrainedX + 'px';
-      modalContent.style.top = constrainedY + 'px';
-    }
+    // Drag logic disabled
+    // if (isDragging && modalContent.style.display === 'flex') {
+    //   const newX = e.clientX - dragOffsetX;
+    //   const newY = e.clientY - dragOffsetY;
+    //   
+    //   // Boundary checks
+    //   const maxX = window.innerWidth - modalContent.offsetWidth;
+    //   const maxY = window.innerHeight - modalContent.offsetHeight;
+    //   
+    //   const constrainedX = Math.max(0, Math.min(newX, maxX));
+    //   const constrainedY = Math.max(0, Math.min(newY, maxY));
+    //   
+    //   // Clear transform and set absolute position
+    //   modalContent.style.transform = 'none';
+    //   modalContent.style.left = constrainedX + 'px';
+    //   modalContent.style.top = constrainedY + 'px';
+    // }
 
     // Resizing logic
     if (isResizing && modalContent.style.display === 'flex') {
       const deltaX = e.clientX - resizeStartX;
       const deltaY = e.clientY - resizeStartY;
       
-      const newWidth = Math.max(400, resizeStartWidth + deltaX);
-      const newHeight = Math.max(300, resizeStartHeight + deltaY);
+      const newWidth = Math.max(500, resizeStartWidth + deltaX);
+      const newHeight = Math.max(350, resizeStartHeight + deltaY);
       
-      // Constrain to viewport
-      const maxWidth = window.innerWidth - modalContent.offsetLeft;
-      const maxHeight = window.innerHeight - modalContent.offsetTop;
+      // Constrain to viewport with padding
+      const maxWidth = window.innerWidth - 40;
+      const maxHeight = window.innerHeight - 40;
       
       // Clear transform for proper sizing
       modalContent.style.transform = 'none';
+      modalContent.style.left = 'auto';
+      modalContent.style.top = 'auto';
+      
       modalContent.style.width = Math.min(newWidth, maxWidth) + 'px';
       modalContent.style.height = Math.min(newHeight, maxHeight) + 'px';
     }
   });
 
   document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      console.log('[Dragging] Stopped dragging modal');
-    }
+    // if (isDragging) {
+    //   isDragging = false;
+    //   console.log('[Dragging] Stopped dragging modal');
+    // }
     if (isResizing) {
       isResizing = false;
       console.log('[Resizing] Stopped resizing modal');
