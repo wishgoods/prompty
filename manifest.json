@@ -8,8 +8,6 @@
     "storage",
     "scripting",
     "activeTab",
-    "contextMenus",
-    "webRequest",
     "commands"
   ],
   
