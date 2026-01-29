@@ -683,6 +683,31 @@ function testAutoSaveDebug() {
         log('❌ Content script not injected: ' + chrome.runtime.lastError.message);
       } else if (response && response.pong) {
         log('✅ Content script is active');
+        
+        // Now check DOM state
+        log('🔍 Checking DOM state...');
+        chrome.tabs.sendMessage(activeTab.id, { action: 'debugDOMState' }, (domResponse) => {
+          if (chrome.runtime.lastError) {
+            log('❌ DOM debug error: ' + chrome.runtime.lastError.message);
+          } else {
+            log(`📊 Found ${domResponse.textareaCount} textareas`);
+            log(`📊 Found ${domResponse.editableCount} contenteditable divs`);
+            
+            if (domResponse.textareaCount === 0 && domResponse.editableCount === 0) {
+              log('⚠️ No input fields detected! Auto-save might not work.');
+            } else if (domResponse.textareaCount > 0) {
+              log('✅ Textareas detected - auto-save should work');
+              domResponse.textareas.forEach((ta, i) => {
+                log(`   [${i}] ID: ${ta.id || 'none'}, Class: ${ta.class.substring(0, 20)}...`);
+              });
+            } else if (domResponse.editableCount > 0) {
+              log('✅ Contenteditable divs detected - auto-save should work');
+              domResponse.editables.forEach((el, i) => {
+                log(`   [${i}] ${el.tagName}, Role: ${el.role || 'none'}`);
+              });
+            }
+          }
+        });
       }
     });
     

@@ -654,7 +654,7 @@ function showSaveNotification(message) {
  * Listen for messages from background script
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('Content script received message:', request.action);
+  console.log('[Content Script] Message received:', request.action);
 
   switch (request.action) {
     case 'captureSelectedText':
@@ -666,7 +666,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       break;
     
     case 'ping':
+      console.log('[Content Script] ✅ Ping received, responding...');
       sendResponse({ pong: true });
+      break;
+    
+    case 'debugDOMState':
+      debugDOMState(sendResponse);
       break;
     
     default:
@@ -676,6 +681,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   return true;
 });
+
+/**
+ * Debug DOM state for troubleshooting
+ */
+function debugDOMState(sendResponse) {
+  const textareas = document.querySelectorAll('textarea');
+  const editables = document.querySelectorAll('[contenteditable="true"]');
+  
+  const debug = {
+    url: window.location.href,
+    textareaCount: textareas.length,
+    editableCount: editables.length,
+    textareas: [],
+    editables: []
+  };
+  
+  textareas.forEach((ta, i) => {
+    debug.textareas.push({
+      index: i,
+      id: ta.id,
+      class: ta.className,
+      placeholder: ta.placeholder,
+      visible: ta.offsetHeight > 0,
+      value: ta.value.substring(0, 30)
+    });
+  });
+  
+  editables.forEach((el, i) => {
+    debug.editables.push({
+      index: i,
+      tagName: el.tagName,
+      id: el.id,
+      class: el.className,
+      role: el.getAttribute('role'),
+      visible: el.offsetHeight > 0,
+      text: el.textContent.substring(0, 30)
+    });
+  });
+  
+  console.log('[Debug] DOM State:', debug);
+  sendResponse(debug);
+}
 
 /**
  * Handle capturing selected text
