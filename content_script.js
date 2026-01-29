@@ -16,94 +16,107 @@ let trackedTextareas = new Map(); // Track all monitored textareas
 function initializeAutoSave() {
   console.log('[Auto-Save] Initializing auto-save monitoring...');
   
-  // Monitor existing textareas
-  const initialTextareas = document.querySelectorAll('textarea');
-  console.log('[Auto-Save] Found', initialTextareas.length, 'textareas on page load');
-  
-  initialTextareas.forEach(textarea => {
-    attachAutoSaveListener(textarea);
-  });
+  // Wait for document.body to be available
+  function startMonitoring() {
+    if (!document.body) {
+      console.log('[Auto-Save] Document.body not ready, waiting...');
+      setTimeout(startMonitoring, 100);
+      return;
+    }
 
-  // Also monitor contenteditable divs (ChatGPT uses these)
-  const editableDivs = document.querySelectorAll('[contenteditable="true"]');
-  console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
-  editableDivs.forEach(div => {
-    attachAutoSaveListenerToContentEditable(div);
-  });
-  
-  // For ChatGPT specifically - monitor any large contenteditable divs (fallback)
-  if (window.location.href.includes('chatgpt.com') || window.location.href.includes('chat.openai.com')) {
-    console.log('[Auto-Save] ChatGPT detected - enabling aggressive input monitoring');
-    const allDivs = document.querySelectorAll('div[role="textbox"], div[contenteditable], textarea[data-id]');
-    allDivs.forEach(el => {
-      if (el.contentEditable === 'true') {
-        console.log('[Auto-Save] Found ChatGPT input field:', { role: el.getAttribute('role'), class: el.className });
-        if (!trackedTextareas.has(el)) {
-          attachAutoSaveListenerToContentEditable(el);
-        }
-      } else if (el.tagName === 'TEXTAREA') {
-        if (!trackedTextareas.has(el)) {
-          attachAutoSaveListener(el);
-        }
-      }
+    console.log('[Auto-Save] Document.body is ready, starting monitoring');
+    
+    // Monitor existing textareas
+    const initialTextareas = document.querySelectorAll('textarea');
+    console.log('[Auto-Save] Found', initialTextareas.length, 'textareas on page load');
+    
+    initialTextareas.forEach(textarea => {
+      attachAutoSaveListener(textarea);
     });
-  }
 
-  // Monitor newly added elements via mutation observer
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.addedNodes.length > 0) {
-        mutation.addedNodes.forEach((node) => {
-          // Check for new textareas
-          if (node.tagName === 'TEXTAREA') {
-            console.log('[Auto-Save] New textarea detected:', {
-              id: node.id,
-              class: node.className,
-              placeholder: node.placeholder
-            });
-            attachAutoSaveListener(node);
+    // Also monitor contenteditable divs (ChatGPT uses these)
+    const editableDivs = document.querySelectorAll('[contenteditable="true"]');
+    console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
+    editableDivs.forEach(div => {
+      attachAutoSaveListenerToContentEditable(div);
+    });
+    
+    // For ChatGPT specifically - monitor any large contenteditable divs (fallback)
+    if (window.location.href.includes('chatgpt.com') || window.location.href.includes('chat.openai.com')) {
+      console.log('[Auto-Save] ChatGPT detected - enabling aggressive input monitoring');
+      const allDivs = document.querySelectorAll('div[role="textbox"], div[contenteditable], textarea[data-id]');
+      allDivs.forEach(el => {
+        if (el.contentEditable === 'true') {
+          console.log('[Auto-Save] Found ChatGPT input field:', { role: el.getAttribute('role'), class: el.className });
+          if (!trackedTextareas.has(el)) {
+            attachAutoSaveListenerToContentEditable(el);
           }
-          
-          // Check for new contenteditable divs
-          if (node.contentEditable === 'true') {
-            console.log('[Auto-Save] New contenteditable div detected');
-            attachAutoSaveListenerToContentEditable(node);
+        } else if (el.tagName === 'TEXTAREA') {
+          if (!trackedTextareas.has(el)) {
+            attachAutoSaveListener(el);
           }
-          
-          // Check inside added nodes
-          if (node.querySelectorAll) {
-            const newTextareas = node.querySelectorAll('textarea');
-            if (newTextareas.length > 0) {
-              console.log('[Auto-Save] Found', newTextareas.length, 'new textareas in added nodes');
-              newTextareas.forEach(textarea => {
-                if (!trackedTextareas.has(textarea)) {
-                  attachAutoSaveListener(textarea);
-                }
+        }
+      });
+    }
+
+    // Monitor newly added elements via mutation observer
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length > 0) {
+          mutation.addedNodes.forEach((node) => {
+            // Check for new textareas
+            if (node.tagName === 'TEXTAREA') {
+              console.log('[Auto-Save] New textarea detected:', {
+                id: node.id,
+                class: node.className,
+                placeholder: node.placeholder
               });
+              attachAutoSaveListener(node);
             }
             
-            // Also check for contenteditable divs
-            const newEditables = node.querySelectorAll('[contenteditable="true"]');
-            if (newEditables.length > 0) {
-              console.log('[Auto-Save] Found', newEditables.length, 'new contenteditable divs');
-              newEditables.forEach(div => {
-                if (!trackedTextareas.has(div)) {
-                  attachAutoSaveListenerToContentEditable(div);
-                }
-              });
+            // Check for new contenteditable divs
+            if (node.contentEditable === 'true') {
+              console.log('[Auto-Save] New contenteditable div detected');
+              attachAutoSaveListenerToContentEditable(node);
             }
-          }
-        });
-      }
+            
+            // Check inside added nodes
+            if (node.querySelectorAll) {
+              const newTextareas = node.querySelectorAll('textarea');
+              if (newTextareas.length > 0) {
+                console.log('[Auto-Save] Found', newTextareas.length, 'new textareas in added nodes');
+                newTextareas.forEach(textarea => {
+                  if (!trackedTextareas.has(textarea)) {
+                    attachAutoSaveListener(textarea);
+                  }
+                });
+              }
+              
+              // Also check for contenteditable divs
+              const newEditables = node.querySelectorAll('[contenteditable="true"]');
+              if (newEditables.length > 0) {
+                console.log('[Auto-Save] Found', newEditables.length, 'new contenteditable divs');
+                newEditables.forEach(div => {
+                  if (!trackedTextareas.has(div)) {
+                    attachAutoSaveListenerToContentEditable(div);
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
     });
-  });
 
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-  
-  console.log('[Auto-Save] Mutation observer initialized');
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    
+    console.log('[Auto-Save] Mutation observer initialized');
+  }
+
+  startMonitoring();
 }
 
 /**
@@ -773,11 +786,23 @@ function handleCaptureSelectedText(sendResponse) {
 
 // ==================== Initialize ====================
 
-// Start monitoring for prompt submissions
-monitorPromptSubmission();
-
-// Start real-time auto-save monitoring
-initializeAutoSave();
-
-console.log('Prompt Keeper is monitoring:', aiSource);
+// Wait for DOM to be ready before initializing
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[Content Script] DOM loaded, initializing...');
+    // Start monitoring for prompt submissions
+    monitorPromptSubmission();
+    // Start real-time auto-save monitoring
+    initializeAutoSave();
+    console.log('Prompt Keeper is monitoring:', aiSource);
+  });
+} else {
+  // DOM is already loaded
+  console.log('[Content Script] DOM already loaded, initializing...');
+  // Start monitoring for prompt submissions
+  monitorPromptSubmission();
+  // Start real-time auto-save monitoring
+  initializeAutoSave();
+  console.log('Prompt Keeper is monitoring:', aiSource);
+}
 
