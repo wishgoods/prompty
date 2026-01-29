@@ -14,8 +14,17 @@ let trackedTextareas = new Map(); // Track all monitored textareas
  * Monitor all textareas and input fields for auto-save
  */
 function initializeAutoSave() {
+  console.log('[Auto-Save] Initializing auto-save monitoring...');
+  
+  // For ChatGPT - also monitor contenteditable divs since they might use that instead
+  const editableDivs = document.querySelectorAll('[contenteditable="true"]');
+  console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
+  
   // Monitor existing textareas
-  document.querySelectorAll('textarea').forEach(textarea => {
+  const initialTextareas = document.querySelectorAll('textarea');
+  console.log('[Auto-Save] Found', initialTextareas.length, 'textareas on page load');
+  
+  initialTextareas.forEach(textarea => {
     attachAutoSaveListener(textarea);
   });
 
@@ -25,13 +34,22 @@ function initializeAutoSave() {
       if (mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach((node) => {
           if (node.tagName === 'TEXTAREA') {
+            console.log('[Auto-Save] New textarea detected:', {
+              id: node.id,
+              class: node.className,
+              placeholder: node.placeholder
+            });
             attachAutoSaveListener(node);
           } else if (node.querySelectorAll) {
-            node.querySelectorAll('textarea').forEach(textarea => {
-              if (!trackedTextareas.has(textarea)) {
-                attachAutoSaveListener(textarea);
-              }
-            });
+            const newTextareas = node.querySelectorAll('textarea');
+            if (newTextareas.length > 0) {
+              console.log('[Auto-Save] Found', newTextareas.length, 'new textareas in added nodes');
+              newTextareas.forEach(textarea => {
+                if (!trackedTextareas.has(textarea)) {
+                  attachAutoSaveListener(textarea);
+                }
+              });
+            }
           }
         });
       }
@@ -42,6 +60,8 @@ function initializeAutoSave() {
     childList: true,
     subtree: true
   });
+  
+  console.log('[Auto-Save] Mutation observer initialized');
 }
 
 /**
@@ -50,19 +70,33 @@ function initializeAutoSave() {
 function attachAutoSaveListener(textarea) {
   if (trackedTextareas.has(textarea)) return;
   
+  // Detect if this is a prompt input field
+  const isPromptField = isPromptInputField(textarea);
+  
+  console.log('[Auto-Save] Textarea detected:', {
+    tracked: trackedTextareas.has(textarea),
+    isPromptField: isPromptField,
+    id: textarea.id,
+    class: textarea.className,
+    placeholder: textarea.placeholder,
+    ariaLabel: textarea.getAttribute('aria-label'),
+    size: { width: textarea.offsetWidth, height: textarea.offsetHeight }
+  });
+  
+  if (!isPromptField) {
+    console.log('[Auto-Save] ⚠️ Textarea is NOT a prompt field, skipping...');
+    return;
+  }
+
   trackedTextareas.set(textarea, {
     lastValue: textarea.value,
     saveTimeout: null
   });
 
-  // Detect if this is a prompt input field
-  const isPromptField = isPromptInputField(textarea);
-  
-  if (!isPromptField) return; // Only monitor prompt fields
-
   // Add visual indicator
   textarea.style.borderColor = '#6366F1';
   textarea.title = 'Auto-saving to Prompt Keeper...';
+  console.log('[Auto-Save] ✅ Textarea registered for auto-save monitoring');
 
   // Listen for input
   textarea.addEventListener('input', (e) => {
@@ -77,6 +111,8 @@ function attachAutoSaveListener(textarea) {
     // Debounce: save after 2 seconds of inactivity
     tracked.saveTimeout = setTimeout(() => {
       const currentValue = textarea.value.trim();
+      
+      console.log('[Auto-Save] Input detected, saving in 2s. Content:', currentValue.substring(0, 50) + '...');
       
       if (currentValue && currentValue !== tracked.lastValue) {
         savePromptInRealtime(currentValue, textarea);
@@ -96,6 +132,7 @@ function attachAutoSaveListener(textarea) {
 
     const currentValue = textarea.value.trim();
     if (currentValue && currentValue !== tracked.lastValue) {
+      console.log('[Auto-Save] Blur detected, saving immediately...');
       savePromptInRealtime(currentValue, textarea);
       tracked.lastValue = currentValue;
     }
@@ -111,30 +148,58 @@ function isPromptInputField(textarea) {
   const id = textarea.id.toLowerCase();
   const placeholder = textarea.placeholder.toLowerCase();
   const ariaLabel = (textarea.getAttribute('aria-label') || '').toLowerCase();
+  const name = (textarea.getAttribute('name') || '').toLowerCase();
+  const dataTestId = (textarea.getAttribute('data-testid') || '').toLowerCase();
 
+  // More specific indicators based on actual platform usage
   const promptIndicators = [
     'prompt', 'message', 'chat', 'input', 'compose',
-    'editor', 'content', 'text', 'query', 'search'
+    'editor', 'content', 'text', 'query', 'search',
+    'send', 'type', 'write', 'ask', 'assistant'
   ];
+
+  // Check parent elements for role/aria-label
+  let parentElement = textarea.parentElement;
+  let parentInfo = '';
+  if (parentElement) {
+    parentInfo = (parentElement.className || '').toLowerCase() + ' ' + 
+                 (parentElement.getAttribute('aria-label') || '').toLowerCase();
+  }
 
   const hasPromptIndicator = 
     promptIndicators.some(word => classNames.includes(word)) ||
     promptIndicators.some(word => id.includes(word)) ||
     promptIndicators.some(word => placeholder.includes(word)) ||
-    promptIndicators.some(word => ariaLabel.includes(word));
+    promptIndicators.some(word => ariaLabel.includes(word)) ||
+    promptIndicators.some(word => name.includes(word)) ||
+    promptIndicators.some(word => dataTestId.includes(word)) ||
+    promptIndicators.some(word => parentInfo.includes(word));
 
   // Check if it's visible and reasonable size
   const isVisible = textarea.offsetHeight > 0 && textarea.offsetWidth > 0;
-  const isReasonableSize = textarea.offsetHeight >= 50; // At least 50px height
+  const isReasonableSize = textarea.offsetHeight >= 40; // At least 40px height
 
-  return hasPromptIndicator && isVisible && isReasonableSize;
+  const result = hasPromptIndicator && isVisible && isReasonableSize;
+  
+  console.log('[Detection] Checking textarea:', {
+    result,
+    hasPromptIndicator,
+    isVisible,
+    isReasonableSize,
+    indicators: { classNames, id, placeholder, ariaLabel, name, dataTestId }
+  });
+
+  return result;
 }
 
 /**
  * Save prompt in real-time with visual feedback
  */
 function savePromptInRealtime(promptText, sourceElement) {
-  if (!promptText || promptText.length < 10) return; // Only save prompts > 10 chars
+  if (!promptText || promptText.length < 5) {
+    console.log('[Auto-Save] ⚠️ Prompt too short, skipping...');
+    return;
+  }
 
   const promptData = {
     content: promptText,
@@ -144,6 +209,12 @@ function savePromptInRealtime(promptText, sourceElement) {
     title: generatePromptTitle(promptText)
   };
 
+  console.log('[Auto-Save] 📤 Sending prompt to background script:', {
+    title: promptData.title,
+    source: promptData.source,
+    length: promptData.content.length
+  });
+
   // Send to background script
   chrome.runtime.sendMessage({
     action: 'capturePrompt',
@@ -151,9 +222,17 @@ function savePromptInRealtime(promptText, sourceElement) {
     source: promptData.source,
     url: promptData.url
   }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('[Auto-Save] ❌ Message error:', chrome.runtime.lastError);
+      return;
+    }
+    
     if (response && response.success) {
+      console.log('[Auto-Save] ✅ Prompt saved successfully!');
       // Visual feedback
       addSaveIndicator(sourceElement, 'Auto-saved! ✓');
+    } else {
+      console.error('[Auto-Save] ❌ Save failed:', response);
     }
   });
 }

@@ -71,6 +71,12 @@ importFile.addEventListener('change', handleFileImport);
 settingsBtn.addEventListener('click', () => switchTab('settings'));
 clearDataBtn.addEventListener('click', clearAllData);
 
+// Debug Test Button
+const debugTestBtn = document.getElementById('debugTestBtn');
+if (debugTestBtn) {
+  debugTestBtn.addEventListener('click', testAutoSaveDebug);
+}
+
 // Modal Controls
 cancelBtn.addEventListener('click', closeModal);
 modalCloseBtn.addEventListener('click', closeModal);
@@ -640,6 +646,62 @@ function escapeHtml(text) {
 function truncateText(text, length = 150) {
   if (text.length <= length) return text;
   return text.substring(0, length) + '...';
+}
+
+/**
+ * Test auto-save debug function
+ */
+function testAutoSaveDebug() {
+  const debugLog = document.getElementById('debugLog');
+  if (!debugLog) return;
+  
+  function log(msg) {
+    const timestamp = new Date().toLocaleTimeString();
+    const line = `[${timestamp}] ${msg}`;
+    console.log(line);
+    debugLog.innerHTML += line + '<br>';
+    debugLog.scrollTop = debugLog.scrollHeight;
+  }
+  
+  debugLog.innerHTML = ''; // Clear previous logs
+  log('🔍 Starting auto-save debug test...');
+  
+  // Get active tab info
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const activeTab = tabs[0];
+    log(`📱 Current URL: ${activeTab.url}`);
+    
+    // Check if it's a supported AI site
+    const supportedSites = ['chatgpt.com', 'chat.openai.com', 'gemini.google.com', 'claude.ai'];
+    const isSupported = supportedSites.some(site => activeTab.url.includes(site));
+    log(isSupported ? '✅ Site is supported for auto-save' : '⚠️ Site may not be recognized');
+    
+    // Send ping to content script
+    log('📤 Sending ping to content script...');
+    chrome.tabs.sendMessage(activeTab.id, { action: 'ping' }, (response) => {
+      if (chrome.runtime.lastError) {
+        log('❌ Content script not injected: ' + chrome.runtime.lastError.message);
+      } else if (response && response.pong) {
+        log('✅ Content script is active');
+      }
+    });
+    
+    // Show storage info
+    chrome.storage.local.get('prompts', (result) => {
+      const count = result.prompts ? result.prompts.length : 0;
+      log(`💾 Prompts in storage: ${count}`);
+      
+      if (result.prompts && result.prompts.length > 0) {
+        const recent = result.prompts[result.prompts.length - 1];
+        log(`📝 Most recent: "${recent.title}"`);
+        log(`📅 Saved: ${new Date(recent.timestamp).toLocaleString()}`);
+      } else {
+        log('⚠️ No prompts saved yet - auto-save might not be working');
+      }
+    });
+    
+    log('🔍 Debug test complete. Check console for more details.');
+  });
 }
 
 /**

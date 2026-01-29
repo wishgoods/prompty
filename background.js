@@ -99,27 +99,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  */
 async function handlePromptCapture(request, sender, sendResponse) {
   try {
+    console.log('[Background] 📨 Received capturePrompt message from:', sender.url);
+    
     const promptData = {
       content: request.prompt,
       source: request.source || 'Unknown',
       url: sender.url,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      title: request.prompt.substring(0, 50) + (request.prompt.length > 50 ? '...' : '')
     };
+
+    console.log('[Background] 💾 Storing prompt:', {
+      source: promptData.source,
+      length: promptData.content.length,
+      title: promptData.title
+    });
 
     // Store the prompt
     const savedPrompt = await storePromptLocally(promptData);
     
+    console.log('[Background] ✅ Prompt saved successfully with ID:', savedPrompt.id);
+    
     // Notify user
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'images/icon-128.png',
+      iconUrl: 'images/propmpty_logo.png',
       title: 'Prompt Saved',
       message: `"${truncateText(request.prompt)}" saved to Prompt Keeper`
     });
 
     sendResponse({ success: true, promptId: savedPrompt.id });
   } catch (error) {
-    console.error('Error capturing prompt:', error);
+    console.error('[Background] ❌ Error capturing prompt:', error);
     sendResponse({ success: false, error: error.message });
   }
 }
