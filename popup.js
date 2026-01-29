@@ -374,22 +374,29 @@ async function savePrompt() {
 /**
  * Delete prompt
  */
-function deletePrompt() {
-  if (!currentEditingPrompt) return;
-
-  if (confirm('Are you sure you want to delete this prompt?')) {
-    chrome.runtime.sendMessage({
-      action: 'deletePrompt',
-      promptId: currentEditingPrompt.id
-    }, (response) => {
-      if (response.success) {
-        loadAllPrompts();
-        closeModal();
-      } else {
-        alert('Error deleting prompt: ' + response.error);
-      }
-    });
+function deletePrompt(promptId) {
+  // If called from modal, use currentEditingPrompt
+  const idToDelete = promptId || (currentEditingPrompt ? currentEditingPrompt.id : null);
+  
+  if (!idToDelete) {
+    console.error('No prompt ID to delete');
+    return;
   }
+
+  chrome.runtime.sendMessage({
+    action: 'deletePrompt',
+    promptId: idToDelete
+  }, (response) => {
+    if (response && response.success) {
+      console.log('[Popup] Prompt deleted successfully');
+      loadAllPrompts();
+      closeModal();
+    } else {
+      const errorMsg = response ? response.error : 'Unknown error';
+      console.error('[Popup] Error deleting prompt:', errorMsg);
+      alert('Error deleting prompt: ' + errorMsg);
+    }
+  });
 }
 
 // ==================== Favorites & Toggle ====================

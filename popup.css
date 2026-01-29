@@ -427,6 +427,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 .icon-btn:hover {
@@ -439,8 +441,40 @@ body {
   transform: scale(0.95);
 }
 
+/* Favorite button styling */
+.favorite-btn {
+  color: var(--warning-color);
+}
+
+.favorite-btn:hover {
+  background: linear-gradient(135deg, #F59E0B 0%, #F97316 100%);
+}
+
+/* Edit button styling */
+.edit-btn {
+  color: var(--primary-color);
+}
+
+.edit-btn:hover {
+  background: var(--gradient-primary);
+}
+
+/* Copy button styling */
+.copy-btn {
+  color: #06B6D4;
+}
+
+.copy-btn:hover {
+  background: linear-gradient(135deg, #06B6D4 0%, #0891B2 100%);
+}
+
+/* Delete button styling */
+.delete-btn {
+  color: var(--danger-color);
+}
+
 .delete-btn:hover {
-  background: var(--danger-color) !important;
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%) !important;
   color: white !important;
 }
 
