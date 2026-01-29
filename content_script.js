@@ -30,6 +30,24 @@ function initializeAutoSave() {
   editableDivs.forEach(div => {
     attachAutoSaveListenerToContentEditable(div);
   });
+  
+  // For ChatGPT specifically - monitor any large contenteditable divs (fallback)
+  if (window.location.href.includes('chatgpt.com') || window.location.href.includes('chat.openai.com')) {
+    console.log('[Auto-Save] ChatGPT detected - enabling aggressive input monitoring');
+    const allDivs = document.querySelectorAll('div[role="textbox"], div[contenteditable], textarea[data-id]');
+    allDivs.forEach(el => {
+      if (el.contentEditable === 'true') {
+        console.log('[Auto-Save] Found ChatGPT input field:', { role: el.getAttribute('role'), class: el.className });
+        if (!trackedTextareas.has(el)) {
+          attachAutoSaveListenerToContentEditable(el);
+        }
+      } else if (el.tagName === 'TEXTAREA') {
+        if (!trackedTextareas.has(el)) {
+          attachAutoSaveListener(el);
+        }
+      }
+    });
+  }
 
   // Monitor newly added elements via mutation observer
   const observer = new MutationObserver((mutations) => {
@@ -295,6 +313,22 @@ function isPromptInputField(element) {
   // Check if it's visible and reasonable size
   const isVisible = element.offsetHeight > 0 && element.offsetWidth > 0;
   const isReasonableSize = element.offsetHeight >= 30; // At least 30px height
+
+  // For contenteditable divs without clear indicators, be more lenient
+  // If it's contenteditable, visible, and reasonably sized, monitor it
+  if (element.contentEditable === 'true') {
+    const lenientSize = element.offsetHeight >= 40 && element.offsetWidth >= 200;
+    const hasResult = hasPromptIndicator || lenientSize;
+    
+    if (!hasPromptIndicator && lenientSize) {
+      console.log('[Detection] Lenient match for contenteditable (large & visible):', {
+        height: element.offsetHeight,
+        width: element.offsetWidth
+      });
+    }
+    
+    return hasResult;
+  }
 
   const result = hasPromptIndicator && isVisible && isReasonableSize;
   
