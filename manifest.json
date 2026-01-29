@@ -31,7 +31,7 @@
   
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Prompt Keeper - Manage Your AI Prompts",
+    "default_title": "Prompty - Manage Your AI Prompts",
     "default_icon": {
       "16": "images/propmpty_logo.png",
       "48": "images/propmpty_logo.png",
