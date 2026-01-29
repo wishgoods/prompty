@@ -67,14 +67,10 @@ const modalResizeHandle = document.querySelector('.modal-resize-handle');
 
 // Initialize modal position to center
 function centerModal() {
-  const rect = modalContent.getBoundingClientRect();
-  const centerX = (window.innerWidth - modalContent.offsetWidth) / 2;
-  const centerY = (window.innerHeight - modalContent.offsetHeight) / 2;
-  
-  // Remove transform to calculate position correctly
-  modalContent.style.left = (centerX > 0 ? centerX : 0) + 'px';
-  modalContent.style.top = (centerY > 0 ? centerY : 0) + 'px';
-  modalContent.style.transform = 'none';
+  // Position centered using left/top with transform offset
+  modalContent.style.left = '50%';
+  modalContent.style.top = '50%';
+  modalContent.style.transform = 'translate(-50%, -50%)';
 }
 
 if (modalHeader && modalContent) {
@@ -98,6 +94,8 @@ if (modalHeader && modalContent) {
       const constrainedX = Math.max(0, Math.min(newX, maxX));
       const constrainedY = Math.max(0, Math.min(newY, maxY));
       
+      // Clear transform and set absolute position
+      modalContent.style.transform = 'none';
       modalContent.style.left = constrainedX + 'px';
       modalContent.style.top = constrainedY + 'px';
     }
@@ -114,10 +112,10 @@ if (modalHeader && modalContent) {
       const maxWidth = window.innerWidth - modalContent.offsetLeft;
       const maxHeight = window.innerHeight - modalContent.offsetTop;
       
+      // Clear transform for proper sizing
+      modalContent.style.transform = 'none';
       modalContent.style.width = Math.min(newWidth, maxWidth) + 'px';
       modalContent.style.height = Math.min(newHeight, maxHeight) + 'px';
-      modalContent.style.maxWidth = 'none';
-      modalContent.style.maxHeight = 'none';
     }
   });
 
@@ -209,6 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
   loadAllPrompts();
   updateStatistics();
   logDebugInfo(); // Add debugging info to console
+  
+  // Initialize modal styling on load
+  if (modalContent) {
+    modalContent.style.position = 'absolute';
+    modalContent.style.left = '50%';
+    modalContent.style.top = '50%';
+    modalContent.style.transform = 'translate(-50%, -50%)';
+  }
 });
 
 /**
