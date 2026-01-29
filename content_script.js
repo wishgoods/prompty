@@ -16,10 +16,6 @@ let trackedTextareas = new Map(); // Track all monitored textareas
 function initializeAutoSave() {
   console.log('[Auto-Save] Initializing auto-save monitoring...');
   
-  // For ChatGPT - also monitor contenteditable divs since they might use that instead
-  const editableDivs = document.querySelectorAll('[contenteditable="true"]');
-  console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
-  
   // Monitor existing textareas
   const initialTextareas = document.querySelectorAll('textarea');
   console.log('[Auto-Save] Found', initialTextareas.length, 'textareas on page load');
@@ -28,11 +24,19 @@ function initializeAutoSave() {
     attachAutoSaveListener(textarea);
   });
 
-  // Monitor newly added textareas via mutation observer
+  // Also monitor contenteditable divs (ChatGPT uses these)
+  const editableDivs = document.querySelectorAll('[contenteditable="true"]');
+  console.log('[Auto-Save] Found', editableDivs.length, 'contenteditable divs');
+  editableDivs.forEach(div => {
+    attachAutoSaveListenerToContentEditable(div);
+  });
+
+  // Monitor newly added elements via mutation observer
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.addedNodes.length > 0) {
         mutation.addedNodes.forEach((node) => {
+          // Check for new textareas
           if (node.tagName === 'TEXTAREA') {
             console.log('[Auto-Save] New textarea detected:', {
               id: node.id,
@@ -40,13 +44,33 @@ function initializeAutoSave() {
               placeholder: node.placeholder
             });
             attachAutoSaveListener(node);
-          } else if (node.querySelectorAll) {
+          }
+          
+          // Check for new contenteditable divs
+          if (node.contentEditable === 'true') {
+            console.log('[Auto-Save] New contenteditable div detected');
+            attachAutoSaveListenerToContentEditable(node);
+          }
+          
+          // Check inside added nodes
+          if (node.querySelectorAll) {
             const newTextareas = node.querySelectorAll('textarea');
             if (newTextareas.length > 0) {
               console.log('[Auto-Save] Found', newTextareas.length, 'new textareas in added nodes');
               newTextareas.forEach(textarea => {
                 if (!trackedTextareas.has(textarea)) {
                   attachAutoSaveListener(textarea);
+                }
+              });
+            }
+            
+            // Also check for contenteditable divs
+            const newEditables = node.querySelectorAll('[contenteditable="true"]');
+            if (newEditables.length > 0) {
+              console.log('[Auto-Save] Found', newEditables.length, 'new contenteditable divs');
+              newEditables.forEach(div => {
+                if (!trackedTextareas.has(div)) {
+                  attachAutoSaveListenerToContentEditable(div);
                 }
               });
             }
@@ -65,8 +89,94 @@ function initializeAutoSave() {
 }
 
 /**
- * Attach auto-save listener to a textarea
+ * Attach auto-save listener to a contenteditable div (for ChatGPT, etc.)
  */
+function attachAutoSaveListenerToContentEditable(element) {
+  if (trackedTextareas.has(element)) return;
+  
+  // Detect if this is a prompt input field
+  const isPromptField = isPromptInputField(element);
+  
+  console.log('[Auto-Save] Checking contenteditable:', {
+    tracked: trackedTextareas.has(element),
+    isPromptField: isPromptField,
+    id: element.id,
+    class: element.className,
+    role: element.getAttribute('role'),
+    ariaLabel: element.getAttribute('aria-label'),
+    size: { width: element.offsetWidth, height: element.offsetHeight }
+  });
+  
+  if (!isPromptField) {
+    console.log('[Auto-Save] ⚠️ Contenteditable is NOT a prompt field, skipping...');
+    return;
+  }
+
+  trackedTextareas.set(element, {
+    lastValue: element.textContent,
+    saveTimeout: null
+  });
+
+  // Add visual indicator
+  element.style.outline = '2px solid #6366F1';
+  element.style.outlineOffset = '-2px';
+  console.log('[Auto-Save] ✅ Contenteditable registered for auto-save monitoring');
+
+  // Listen for input
+  element.addEventListener('input', (e) => {
+    const tracked = trackedTextareas.get(element);
+    if (!tracked) return;
+
+    // Clear previous timeout
+    if (tracked.saveTimeout) {
+      clearTimeout(tracked.saveTimeout);
+    }
+
+    // Debounce: save after 2 seconds of inactivity
+    tracked.saveTimeout = setTimeout(() => {
+      const currentValue = element.textContent.trim();
+      
+      console.log('[Auto-Save] Input detected, saving in 2s. Content:', currentValue.substring(0, 50) + '...');
+      
+      if (currentValue && currentValue !== tracked.lastValue) {
+        savePromptInRealtime(currentValue, element);
+        tracked.lastValue = currentValue;
+      }
+    }, 2000);
+  });
+
+  // Listen for paste events too
+  element.addEventListener('paste', (e) => {
+    const tracked = trackedTextareas.get(element);
+    if (!tracked) return;
+
+    setTimeout(() => {
+      const currentValue = element.textContent.trim();
+      if (currentValue && currentValue !== tracked.lastValue) {
+        console.log('[Auto-Save] Paste detected, saving...');
+        savePromptInRealtime(currentValue, element);
+        tracked.lastValue = currentValue;
+      }
+    }, 500);
+  });
+
+  // Save on blur
+  element.addEventListener('blur', () => {
+    const tracked = trackedTextareas.get(element);
+    if (!tracked) return;
+
+    if (tracked.saveTimeout) {
+      clearTimeout(tracked.saveTimeout);
+    }
+
+    const currentValue = element.textContent.trim();
+    if (currentValue && currentValue !== tracked.lastValue) {
+      console.log('[Auto-Save] Blur detected, saving immediately...');
+      savePromptInRealtime(currentValue, element);
+      tracked.lastValue = currentValue;
+    }
+  });
+}
 function attachAutoSaveListener(textarea) {
   if (trackedTextareas.has(textarea)) return;
   
@@ -140,30 +250,36 @@ function attachAutoSaveListener(textarea) {
 }
 
 /**
- * Detect if a textarea is a prompt input field
+ * Detect if a textarea or contenteditable element is a prompt input field
  */
-function isPromptInputField(textarea) {
+function isPromptInputField(element) {
   // Check various attributes that indicate a prompt field
-  const classNames = textarea.className.toLowerCase();
-  const id = textarea.id.toLowerCase();
-  const placeholder = textarea.placeholder.toLowerCase();
-  const ariaLabel = (textarea.getAttribute('aria-label') || '').toLowerCase();
-  const name = (textarea.getAttribute('name') || '').toLowerCase();
-  const dataTestId = (textarea.getAttribute('data-testid') || '').toLowerCase();
+  const classNames = element.className.toLowerCase();
+  const id = element.id.toLowerCase();
+  const placeholder = (element.placeholder || '').toLowerCase();
+  const ariaLabel = (element.getAttribute('aria-label') || '').toLowerCase();
+  const name = (element.getAttribute('name') || '').toLowerCase();
+  const dataTestId = (element.getAttribute('data-testid') || '').toLowerCase();
+  const role = (element.getAttribute('role') || '').toLowerCase();
 
   // More specific indicators based on actual platform usage
   const promptIndicators = [
     'prompt', 'message', 'chat', 'input', 'compose',
     'editor', 'content', 'text', 'query', 'search',
-    'send', 'type', 'write', 'ask', 'assistant'
+    'send', 'type', 'write', 'ask', 'assistant',
+    'textbox', 'searchbox', 'textarea'
   ];
 
   // Check parent elements for role/aria-label
-  let parentElement = textarea.parentElement;
+  let parentElement = element.parentElement;
   let parentInfo = '';
-  if (parentElement) {
-    parentInfo = (parentElement.className || '').toLowerCase() + ' ' + 
-                 (parentElement.getAttribute('aria-label') || '').toLowerCase();
+  let currentLevel = element;
+  for (let i = 0; i < 3 && currentLevel; i++) {
+    const parentClass = (currentLevel.className || '').toLowerCase();
+    const parentAria = (currentLevel.getAttribute('aria-label') || '').toLowerCase();
+    const parentRole = (currentLevel.getAttribute('role') || '').toLowerCase();
+    parentInfo += ' ' + parentClass + ' ' + parentAria + ' ' + parentRole;
+    currentLevel = currentLevel.parentElement;
   }
 
   const hasPromptIndicator = 
@@ -173,20 +289,22 @@ function isPromptInputField(textarea) {
     promptIndicators.some(word => ariaLabel.includes(word)) ||
     promptIndicators.some(word => name.includes(word)) ||
     promptIndicators.some(word => dataTestId.includes(word)) ||
+    promptIndicators.some(word => role.includes(word)) ||
     promptIndicators.some(word => parentInfo.includes(word));
 
   // Check if it's visible and reasonable size
-  const isVisible = textarea.offsetHeight > 0 && textarea.offsetWidth > 0;
-  const isReasonableSize = textarea.offsetHeight >= 40; // At least 40px height
+  const isVisible = element.offsetHeight > 0 && element.offsetWidth > 0;
+  const isReasonableSize = element.offsetHeight >= 30; // At least 30px height
 
   const result = hasPromptIndicator && isVisible && isReasonableSize;
   
-  console.log('[Detection] Checking textarea:', {
+  console.log('[Detection] Checking element:', {
     result,
     hasPromptIndicator,
     isVisible,
     isReasonableSize,
-    indicators: { classNames, id, placeholder, ariaLabel, name, dataTestId }
+    tagName: element.tagName,
+    indicators: { classNames, id, placeholder, ariaLabel, name, dataTestId, role }
   });
 
   return result;
