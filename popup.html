@@ -231,13 +231,15 @@
           </div>
 
           <div class="form-group">
-            <label for="promptSource">Source</label>
-            <select id="promptSource" class="form-select">
+            <label for="promptSource">Source <span class="required">*</span></label>
+            <select id="promptSource" class="form-select" required>
+              <option value="">-- Select a Source --</option>
               <option value="ChatGPT">ChatGPT</option>
               <option value="Google Gemini">Google Gemini</option>
               <option value="Claude">Claude</option>
               <option value="Perplexity AI">Perplexity AI</option>
               <option value="Bing Chat">Bing Chat</option>
+              <option value="HuggingFace">HuggingFace</option>
               <option value="Other">Other</option>
             </select>
           </div>

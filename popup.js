@@ -274,7 +274,7 @@ function openNewPromptModal() {
   promptContent.value = '';
   promptOutput.value = '';
   promptCategory.value = 'General';
-  promptSource.value = 'ChatGPT';
+  promptSource.value = ''; // Empty - user must choose
   promptTags.value = '';
   promptNotes.value = '';
 
@@ -322,9 +322,16 @@ function closeModal() {
 async function savePrompt() {
   const title = promptTitle.value.trim();
   const content = promptContent.value.trim();
+  const source = promptSource.value.trim();
 
   if (!title || !content) {
     alert('Title and content are required');
+    return;
+  }
+
+  if (!source) {
+    alert('Please select a source (ChatGPT, Gemini, Claude, etc.)');
+    promptSource.focus();
     return;
   }
 
@@ -333,7 +340,7 @@ async function savePrompt() {
     content,
     output: promptOutput.value,
     category: promptCategory.value,
-    source: promptSource.value,
+    source: source,
     tags: promptTags.value
       .split(',')
       .map(tag => tag.trim())

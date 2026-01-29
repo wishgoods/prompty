@@ -703,6 +703,11 @@ body {
   color: var(--text-primary);
 }
 
+.form-group label .required {
+  color: var(--danger-color);
+  margin-left: 4px;
+}
+
 .form-input,
 .form-textarea,
 .form-select {
