@@ -95,7 +95,31 @@ promptModal.addEventListener('click', (e) => {
 document.addEventListener('DOMContentLoaded', () => {
   loadAllPrompts();
   updateStatistics();
+  logDebugInfo(); // Add debugging info to console
 });
+
+/**
+ * Debug function to check if extension is working
+ */
+function logDebugInfo() {
+  console.log('=== PROMPT KEEPER DEBUG INFO ===');
+  console.log('✓ Popup loaded successfully');
+  console.log('✓ Current prompts:', currentPrompts.length);
+  
+  chrome.storage.local.get('prompts', (result) => {
+    const count = result.prompts ? result.prompts.length : 0;
+    console.log('✓ Prompts in storage:', count);
+    if (result.prompts && result.prompts.length > 0) {
+      console.log('✓ Recent prompt:', {
+        title: result.prompts[result.prompts.length - 1].title,
+        source: result.prompts[result.prompts.length - 1].source,
+        timestamp: new Date(result.prompts[result.prompts.length - 1].timestamp).toLocaleString()
+      });
+    }
+  });
+  
+  console.log('=== END DEBUG INFO ===');
+}
 
 // ==================== Load Data ====================
 
