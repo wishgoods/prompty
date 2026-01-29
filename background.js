@@ -83,6 +83,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       handleClearAllData(sendResponse);
       break;
     
+    case 'openPopup':
+      handleOpenPopup(sendResponse);
+      break;
+    
     default:
       console.warn('Unknown action:', request.action);
       sendResponse({ error: 'Unknown action' });
@@ -92,7 +96,47 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
+// ==================== Keyboard Shortcuts ====================
+
+/**
+ * Listen for keyboard shortcuts
+ */
+chrome.commands.onCommand.addListener((command) => {
+  console.log('Command received:', command);
+  
+  switch (command) {
+    case 'open-popup':
+      chrome.action.openPopup();
+      break;
+    
+    case 'save-current-input':
+      // Notify content script to save current input
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(tabs[0].id, { action: 'saveCurrentInput' });
+        }
+      });
+      break;
+    
+    default:
+      console.warn('Unknown command:', command);
+  }
+});
+
 // ==================== Handler Functions ====================
+
+/**
+ * Handle open popup request
+ */
+async function handleOpenPopup(sendResponse) {
+  try {
+    chrome.action.openPopup();
+    sendResponse({ success: true });
+  } catch (error) {
+    console.error('Error opening popup:', error);
+    sendResponse({ error: error.message });
+  }
+}
 
 /**
  * Handle prompt capture from content script

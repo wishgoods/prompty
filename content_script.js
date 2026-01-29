@@ -8,6 +8,97 @@ console.log('Prompt Keeper content script loaded');
 let aiSource = detectAISource();
 let trackedTextareas = new Map(); // Track all monitored textareas
 
+// ==================== Floating Button ====================
+
+/**
+ * Create and inject floating button
+ */
+function initializeFloatingButton() {
+  // Create container
+  const container = document.createElement('div');
+  container.id = 'prompt-keeper-floating-container';
+  container.style.cssText = `
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 999999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  `;
+
+  // Create main button
+  const button = document.createElement('button');
+  button.id = 'prompt-keeper-floating-btn';
+  button.innerHTML = '★';
+  button.style.cssText = `
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  button.addEventListener('mouseenter', () => {
+    button.style.transform = 'scale(1.1)';
+    button.style.boxShadow = '0 8px 24px rgba(99, 102, 241, 0.6)';
+  });
+
+  button.addEventListener('mouseleave', () => {
+    button.style.transform = 'scale(1)';
+    button.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
+  });
+
+  button.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'openPopup' });
+  });
+
+  // Create tooltip
+  const tooltip = document.createElement('div');
+  tooltip.style.cssText = `
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  `;
+  tooltip.textContent = 'Prompt Keeper (Ctrl+Shift+P)';
+
+  button.addEventListener('mouseenter', () => {
+    tooltip.style.opacity = '1';
+  });
+
+  button.addEventListener('mouseleave', () => {
+    tooltip.style.opacity = '0';
+  });
+
+  container.appendChild(button);
+  container.appendChild(tooltip);
+  document.body.appendChild(container);
+
+  console.log('[Floating Button] Initialized successfully');
+}
+
+// Initialize on page load
+if (document.body) {
+  initializeFloatingButton();
+} else {
+  document.addEventListener('DOMContentLoaded', initializeFloatingButton);
+}
+
 // ==================== Real-time Auto-Save ====================
 
 /**
@@ -712,6 +803,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ prompt: extractPrompt() });
       break;
     
+    case 'saveCurrentInput':
+      handleSaveCurrentInput(sendResponse);
+      break;
+    
     case 'ping':
       console.log('[Content Script] ✅ Ping received, responding...');
       sendResponse({ pong: true });
@@ -781,6 +876,19 @@ function handleCaptureSelectedText(sendResponse) {
     sendResponse({ success: true });
   } else {
     sendResponse({ success: false, error: 'No text selected' });
+  }
+}
+
+/**
+ * Handle save current input from keyboard shortcut
+ */
+function handleSaveCurrentInput(sendResponse) {
+  const currentInput = extractPrompt();
+  if (currentInput) {
+    capturePrompt(currentInput);
+    sendResponse({ success: true, saved: currentInput });
+  } else {
+    sendResponse({ success: false, error: 'No input found' });
   }
 }
 

@@ -9,7 +9,8 @@
     "scripting",
     "activeTab",
     "contextMenus",
-    "webRequest"
+    "webRequest",
+    "commands"
   ],
   
   "host_permissions": [
@@ -66,5 +67,22 @@
     "16": "images/propmpty_logo.png",
     "48": "images/propmpty_logo.png",
     "128": "images/propmpty_logo.png"
+  },
+
+  "commands": {
+    "open-popup": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Open Prompt Keeper popup"
+    },
+    "save-current-input": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "Command+Shift+S"
+      },
+      "description": "Save current input as prompt"
+    }
   }
 }
