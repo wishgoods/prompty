@@ -11,9 +11,9 @@
     <!-- Header -->
     <header class="header">
       <div class="header-top">
-        <h1 class="title">📝 Prompt Keeper</h1>
+        <h1 class="title">⊳ Prompt Keeper</h1>
         <button id="settingsBtn" class="header-btn" title="Go to Settings">
-          ⚙️
+          ⚙
         </button>
       </div>
       
@@ -23,7 +23,7 @@
           type="text"
           id="searchInput"
           class="search-input"
-          placeholder="🔍 Search prompts by title or content..."
+          placeholder="⌕ Search prompts by title or content..."
           autocomplete="off"
         >
         <button id="clearSearchBtn" class="search-clear-btn" style="display: none;">✕</button>
@@ -32,7 +32,7 @@
       <!-- Filter Options -->
       <div class="filter-row">
         <select id="sourceFilter" class="filter-select">
-          <option value="">📌 All Sources</option>
+          <option value="">◆ All Sources</option>
           <option value="ChatGPT">ChatGPT</option>
           <option value="Google Gemini">Google Gemini</option>
           <option value="Claude">Claude</option>
@@ -42,7 +42,7 @@
         </select>
 
         <select id="categoryFilter" class="filter-select">
-          <option value="">🏷️ All Categories</option>
+          <option value="">◇ All Categories</option>
           <option value="General">General</option>
           <option value="Writing">Writing</option>
           <option value="Code">Code</option>
@@ -53,15 +53,15 @@
         </select>
 
         <button id="favoritesBtn" class="filter-btn" title="Show Favorites">
-          ⭐ Favorites
+          ★ Favorites
         </button>
       </div>
 
       <!-- Tab Navigation -->
       <div class="tabs">
-        <button class="tab-btn active" data-tab="prompts">📋 My Prompts</button>
-        <button class="tab-btn" data-tab="favorites">⭐ Favorites</button>
-        <button class="tab-btn" data-tab="settings">⚙️ Settings</button>
+        <button class="tab-btn active" data-tab="prompts">▢ My Prompts</button>
+        <button class="tab-btn" data-tab="favorites">★ Favorites</button>
+        <button class="tab-btn" data-tab="settings">⚙ Settings</button>
       </div>
     </header>
 
@@ -71,26 +71,26 @@
       <section id="prompts" class="tab-content active">
         <div class="toolbar">
           <button id="newPromptBtn" class="btn btn-primary">
-            ✨ New Prompt
+            ⊕ New Prompt
           </button>
           <button id="exportBtn" class="btn btn-secondary">
-            📥 Export
+            ⇠ Export
           </button>
           <button id="importBtn" class="btn btn-secondary">
-            📤 Import
+            ⇢ Import
           </button>
         </div>
 
         <!-- Quick Stats -->
         <div class="quick-stats" style="display: flex; gap: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-secondary);">
-          <span>📊 Total: <strong id="quickTotal">0</strong></span>
-          <span>⭐ Favorites: <strong id="quickFavorites">0</strong></span>
+          <span>◈ Total: <strong id="quickTotal">0</strong></span>
+          <span>★ Favorites: <strong id="quickFavorites">0</strong></span>
         </div>
 
         <!-- Prompts List -->
         <div id="promptsList" class="prompts-list">
           <div class="empty-state">
-            <p>📭</p>
+            <p>◌</p>
             <p>No prompts saved yet</p>
             <p class="empty-hint">Start using Prompt Keeper with ChatGPT, Gemini, Claude and more!</p>
           </div>
@@ -101,7 +101,7 @@
       <section id="favorites" class="tab-content">
         <div id="favoritesList" class="prompts-list">
           <div class="empty-state">
-            <p>⭐ No favorites yet</p>
+            <p>★ No favorites yet</p>
             <p class="empty-hint">Star your favorite prompts to see them here</p>
           </div>
         </div>
@@ -111,13 +111,13 @@
       <section id="settings" class="tab-content">
         <div class="settings-panel">
           <div class="setting-group">
-            <h3>📊 Statistics</h3>
+            <h3>◈ Statistics</h3>
             <p>Total Prompts: <span id="totalCount">0</span></p>
             <p>Total Favorites: <span id="favoritesCount">0</span></p>
           </div>
 
           <div class="setting-group">
-            <h3>💾 Data Management</h3>
+            <h3>◆ Data Management</h3>
             <button id="exportAllBtn" class="btn btn-secondary">
               Export All Prompts
             </button>
@@ -125,12 +125,12 @@
               Import Prompts
             </button>
             <button id="clearDataBtn" class="btn btn-danger">
-              🗑️ Clear All Data
+              ✕ Clear All Data
             </button>
           </div>
 
           <div class="setting-group">
-            <h3>⚙️ Settings</h3>
+            <h3>⚙ Settings</h3>
             <label class="checkbox-label">
               <input type="checkbox" id="autoCapture" checked>
               Auto-capture prompts from AI sites
@@ -142,7 +142,7 @@
           </div>
 
           <div class="setting-group">
-            <h3>🐛 Debug Info</h3>
+            <h3>◈ Debug Info</h3>
             <button id="debugTestBtn" class="btn btn-secondary">
               Test Auto-Save
             </button>

@@ -439,6 +439,11 @@ body {
   transform: scale(0.95);
 }
 
+.delete-btn:hover {
+  background: var(--danger-color) !important;
+  color: white !important;
+}
+
 .prompt-preview {
   font-size: 13px;
   color: var(--text-secondary);

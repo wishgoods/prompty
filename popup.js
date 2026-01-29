@@ -181,13 +181,16 @@ function renderPrompts(prompts) {
         <h3 class="prompt-title">${escapeHtml(prompt.title)}</h3>
         <div class="prompt-actions">
           <button class="icon-btn favorite-btn" title="Add to favorites" data-id="${prompt.id}" data-tooltip="${prompt.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-            ${prompt.isFavorite ? '⭐' : '☆'}
+            ${prompt.isFavorite ? '★' : '☆'}
           </button>
           <button class="icon-btn edit-btn" title="Edit" data-id="${prompt.id}" data-tooltip="Edit prompt">
-            ✏️
+            ✎
           </button>
           <button class="icon-btn copy-btn" title="Copy prompt" data-id="${prompt.id}" data-tooltip="Copy to clipboard">
-            📋
+            ⎘
+          </button>
+          <button class="icon-btn delete-btn" title="Delete" data-id="${prompt.id}" data-tooltip="Delete prompt">
+            ✕
           </button>
         </div>
       </div>
@@ -195,9 +198,9 @@ function renderPrompts(prompts) {
       <p class="prompt-preview">${escapeHtml(truncateText(prompt.content, 150))}</p>
 
       <div class="prompt-meta">
-        <span class="badge badge-source">📌 ${prompt.source}</span>
-        <span class="badge badge-category">🏷️ ${prompt.category}</span>
-        <span class="badge badge-date">🕐 ${formatDate(prompt.timestamp)}</span>
+        <span class="badge badge-source">◆ ${prompt.source}</span>
+        <span class="badge badge-category">◇ ${prompt.category}</span>
+        <span class="badge badge-date">◈ ${formatDate(prompt.timestamp)}</span>
       </div>
 
       ${prompt.tags && prompt.tags.length > 0 ? `
@@ -236,6 +239,16 @@ function attachPromptCardListeners() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       copyPromptToClipboard(btn.dataset.id);
+    });
+  });
+
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const promptId = btn.dataset.id;
+      if (confirm('Are you sure you want to delete this prompt?')) {
+        deletePrompt(promptId);
+      }
     });
   });
 
