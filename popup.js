@@ -49,6 +49,60 @@ const tabContents = document.querySelectorAll('.tab-content');
 
 // ==================== Event Listeners ====================
 
+// Dragging functionality for modal
+let isDragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+const modalContent = document.querySelector('.modal-content');
+const modalHeader = document.querySelector('.modal-header');
+
+// Initialize modal position to center
+function centerModal() {
+  const rect = modalContent.getBoundingClientRect();
+  const centerX = (window.innerWidth - modalContent.offsetWidth) / 2;
+  const centerY = (window.innerHeight - modalContent.offsetHeight) / 2;
+  
+  // Remove transform to calculate position correctly
+  modalContent.style.left = (centerX > 0 ? centerX : 0) + 'px';
+  modalContent.style.top = (centerY > 0 ? centerY : 0) + 'px';
+  modalContent.style.transform = 'none';
+}
+
+if (modalHeader && modalContent) {
+  modalHeader.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    const rect = modalContent.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+    console.log('[Dragging] Started dragging modal');
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (isDragging && modalContent.style.display === 'flex') {
+      const newX = e.clientX - dragOffsetX;
+      const newY = e.clientY - dragOffsetY;
+      
+      // Boundary checks
+      const maxX = window.innerWidth - modalContent.offsetWidth;
+      const maxY = window.innerHeight - modalContent.offsetHeight;
+      
+      const constrainedX = Math.max(0, Math.min(newX, maxX));
+      const constrainedY = Math.max(0, Math.min(newY, maxY));
+      
+      modalContent.style.left = constrainedX + 'px';
+      modalContent.style.top = constrainedY + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      console.log('[Dragging] Stopped dragging modal');
+    }
+  });
+}
+
 // Tab Navigation
 tabButtons.forEach(btn => {
   btn.addEventListener('click', (e) => {
@@ -279,6 +333,7 @@ function openNewPromptModal() {
   promptNotes.value = '';
 
   promptModal.style.display = 'flex';
+  centerModal();
   promptTitle.focus();
 }
 
@@ -303,6 +358,7 @@ function openEditPromptModal(promptId) {
   promptNotes.value = prompt.notes || '';
 
   promptModal.style.display = 'flex';
+  centerModal();
   promptTitle.focus();
 }
 
